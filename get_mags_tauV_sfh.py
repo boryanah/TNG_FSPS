@@ -61,16 +61,11 @@ snaps = np.hstack((np.array([36]),snaps))
 dists = get_lumdist(redshifts)
 tobss = get_age(redshifts)
 
-# the names Boryana has saved in their respective TNG directories
-snap_dirs = ['_'+str(snaps[i]) for i in range(len(redshifts))]
-snap_dirs[-1] = ''
-
 # these are the quanitities pertinent for the selected redshift
 snap = snaps[i_choice]
 snap = format(snap,'03d')
 redshift = redshifts[i_choice]
 tobs = tobss[i_choice]
-snap_dir = snap_dirs[i_choice]
 dist = dists[i_choice]
 if want_random == '_scatter':
     redshift_prev = redshifts[i_choice-1]
@@ -114,7 +109,7 @@ def get_idx_add(t_edge,t_obs,t_boundary):
 
 def load_data(fname):
     # load hdf5
-    f = h5py.File(file_name, 'r')
+    f = h5py.File(fname, 'r')
     
     # load the bin center in Gyr
     tbins = f['info/sfh_tbins'][:]
@@ -128,27 +123,26 @@ def load_data(fname):
     sfh_exsitu_sfz = f['sfh_exsitu'+sfh_ap+'_sfz'][inds,:]
     sfh_sfr = sfh_insitu_sfr+sfh_exsitu_sfr
 
+    # recent star formation rate
     recent_time = tobs-.1 # select most recent 100 Myr
     time_selection = (tbins > recent_time) & (tbins < tobs)
     sfr_recent = np.mean(sfh_sfr[:,time_selection],axis=1)
     
     # load the SFR at present day
     sub_SFR = f['catsh_SubhaloSFR'][:]
-    # numbers
+    # numbers of galaxies in sample
     print("Number of galaxies = ",len(sub_SFR))
     sub_SFR = sub_SFR[inds]
 
     # load the stellar and gas mass
     sub_gas_mass = f['catsh_SubhaloMassType'][inds,0]# in Msol [not / h]
     sub_star_mass = f['catsh_SubhaloMassType'][:,4]# in Msol [not / h]
-    print("Number of galaxies over 9.5 = ",np.sum(sub_star_mass > 10.**9.5))
+    print("Number of galaxies over 10. = ",np.sum(sub_star_mass > 10.**10.))
     sub_star_mass = sub_star_mass[inds]
     sub_gas_halfr = f['catsh_SubhaloHalfmassRadType'][inds,0]
     sub_star_halfr = f['catsh_SubhaloHalfmassRadType'][inds,4]
     # avoid division by 0
     sub_gas_halfr[sub_gas_halfr == 0.] = np.min(sub_gas_halfr[sub_gas_halfr > 0.])
-    # load the stellar and gas metallicity
-    sub_star_metal = np.load("/mnt/gosling1/boryanah/TNG"+tng[-3:]+"/SubhaloStarMetallicity_fp"+snap_dir+".npy")
     sub_gas_metal = f['catsh_SubhaloGasMetallicity'][:]
     sub_gas_metal = sub_gas_metal[inds]
     # load the subhalo id in original catalog
@@ -161,9 +155,6 @@ def load_data(fname):
     sub_logzgas = np.log10(Z_gas_sol)
     # avoid division by 0
     sub_logzgas[Z_gas_sol == 0.] = -13.
-    sub_logzstar = np.log10(sub_star_metal[sub_id]/solar_metal)
-    # avoid division by 0
-    sub_logzstar[np.isinf(sub_logzstar)] = -13.
     log_star_mass = np.log10(sub_star_mass)
     S_gas_norm = sub_gas_mass/sub_gas_halfr**2
     S_gas_norm /= np.mean(S_gas_norm)
@@ -173,14 +164,14 @@ def load_data(fname):
     log_sSFR = np.log10(sub_SFR/sub_star_mass)
     log_sSFR[sub_SFR == 0.] = -13.
     
-    return tedge, Z_gas_sol, sub_logzgas, sub_logzstar, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz
+    return tedge, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz
 
 # load file
 # large sample (cents+sats)
 file_name = 'data/galaxies_SFH_'+tng+'_'+snap+'.hdf5'
 
 # gather all data for this chunk
-tedge, Z_gas_sol, sub_logzgas, sub_logzstar, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz = load_data(file_name)
+tedge, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz = load_data(file_name)
 
 # tau_V parameters for small (cents only) sample with S_gas_norm
 #alpha, beta, gamma = [0.53067365, 0.22995855, 0.2252313]
@@ -212,7 +203,8 @@ for idx_gal in range(n_gal):
     sfh_exsitu = sfh_exsitu_sfr[idx_gal]
     sfz_insitu = sfh_insitu_sfz[idx_gal]
     sfz_exsitu = sfh_exsitu_sfz[idx_gal]
-    
+
+    # get the new values after adding 30 Myr bin
     sfh_tot, sfz_tot = get_SFH(sfh_insitu,sfh_exsitu,sfz_insitu,sfz_exsitu,idx_add)
     time = tbins_new
 
@@ -226,8 +218,7 @@ for idx_gal in range(n_gal):
     sfh_tot_neb[idx_continuum] = 0.0
     sfz_tot_neb[idx_continuum] = 0.0
     
-    # getting stellar and gas metallicity
-    logzsol = sub_logzstar[idx_gal]
+    # getting gas metallicity
     gas_logz = sub_logzgas[idx_gal]
     
     # choosing the dust parameters
