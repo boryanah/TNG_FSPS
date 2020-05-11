@@ -5,8 +5,9 @@ import fsps
 from mpi4py import MPI
 from astropy.cosmology import FlatLambdaCDM
 import astropy.units as u
+from rebin_sfh import get_SFH_binned
 # Usage mpirun -np 40 python get_mags_tauV_sfh.py
-# select lowmass, tauV params, aperture, reddening, random, redshift, tng
+# select lowmass, tauV params, aperture, reddening, random, redshift, tng100/300
 
 # constants
 solar_metal = 0.0127
@@ -86,36 +87,13 @@ inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
 id_ugriz_mass_gal = np.zeros((n_gal,1+len(bands)+1+len(bands)+len(bands)+2))
 
-def get_SFH(sfh_insitu,sfh_exsitu,sfz_insitu,sfz_exsitu,idx_add):
-    # interpolate SFH
-    sfh_insitu_new = np.insert(sfh_insitu, idx_add, sfh_insitu[idx_add-1])
-    sfh_exsitu_new = np.insert(sfh_exsitu, idx_add, sfh_exsitu[idx_add-1])
-    sfz_insitu_new = np.insert(sfz_insitu, idx_add, sfz_insitu[idx_add-1])
-    sfz_exsitu_new = np.insert(sfz_exsitu, idx_add, sfz_exsitu[idx_add-1])
-    # calculate total SFH and SFZ
-    sfh_tot = sfh_insitu_new + sfh_exsitu_new
-    sfz_tot = (sfz_insitu_new*sfh_insitu_new + sfz_exsitu_new*sfh_exsitu_new)/sfh_tot
-    # avoid division by 0
-    sfz_tot[sfh_tot == 0.] = 1.e-16
-    return sfh_tot, sfz_tot 
-
-def get_idx_add(t_edge,t_obs,t_boundary):
-    # add and update times at 30 Myr
-    tadd = t_obs-t_boundary
-    idx_add = np.where(t_edge > tadd)[0][0]
-    tedge_new = np.insert(t_edge, idx_add, tadd)
-    tbins_new = 0.5*np.diff(tedge_new) + tedge_new[:-1]
-    return tbins_new, idx_add
-
 def load_data(fname):
     # load hdf5
     f = h5py.File(fname, 'r')
     
     # load the bin center in Gyr
     tbins = f['info/sfh_tbins'][:]
-    #dt = f['info/sfh_dt'][:]
-    tedge = f['info/sfh_t_edges'][:]
-    
+        
     # load the in and ex situ sfr and sfz stellar history
     sfh_insitu_sfr = f['sfh_insitu'+sfh_ap+'_sfr'][inds,:]
     sfh_exsitu_sfr = f['sfh_exsitu'+sfh_ap+'_sfr'][inds,:]
@@ -164,14 +142,14 @@ def load_data(fname):
     log_sSFR = np.log10(sub_SFR/sub_star_mass)
     log_sSFR[sub_SFR == 0.] = -13.
     
-    return tedge, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz
+    return tbins, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz
 
 # load file
 # large sample (cents+sats)
 file_name = 'data/galaxies_SFH_'+tng+'_'+snap+'.hdf5'
 
 # gather all data for this chunk
-tedge, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz = load_data(file_name)
+tbins, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz = load_data(file_name)
 
 # tau_V parameters for small (cents only) sample with S_gas_norm
 #alpha, beta, gamma = [0.53067365, 0.22995855, 0.2252313]
@@ -189,11 +167,6 @@ tau_V = gamma*Z_gas_sol**alpha*S_star_norm**beta
 tau_V[np.isinf(tau_V)] = 0.
 tau_V[np.isnan(tau_V)] = 0.
 
-# add and update times at 30 Myr = 0.03 Gyr
-tboundary = 30.*1e-3 
-tbins_new, idx_add = get_idx_add(tedge,tobs,tboundary)
-idx_continuum = tbins_new < tobs - tboundary
-
 for idx_gal in range(n_gal):
     print("sub_id = ",sub_id[idx_gal],idx_gal)
     id_ugriz_mass_gal[idx_gal,0] = sub_id[idx_gal]
@@ -205,18 +178,18 @@ for idx_gal in range(n_gal):
     sfz_exsitu = sfh_exsitu_sfz[idx_gal]
 
     # get the new values after adding 30 Myr bin
-    sfh_tot, sfz_tot = get_SFH(sfh_insitu,sfh_exsitu,sfz_insitu,sfz_exsitu,idx_add)
+    tbins_new, sfh_tot, sfz_tot = get_SFH_binned(tobs, tbins, sfh_insitu, sfh_exsitu, sfz_insitu, sfz_exsitu)
     time = tbins_new
-
+    
     # set SFH of contiuum (neb) to 0
     sfh_tot_continuum, sfz_tot_continuum = np.copy(sfh_tot), np.copy(sfz_tot)
     sfh_tot_neb, sfz_tot_neb = np.copy(sfh_tot), np.copy(sfz_tot)
     # everything prior to the last 30 Myr is relevant
-    sfh_tot_continuum[~idx_continuum] = 0.0
-    sfz_tot_continuum[~idx_continuum] = 0.0
+    sfh_tot_continuum[-1] = 0.0
+    sfz_tot_continuum[-1] = 0.0
     # everything prior to the last 30 Myr is irrelevant
-    sfh_tot_neb[idx_continuum] = 0.0
-    sfz_tot_neb[idx_continuum] = 0.0
+    sfh_tot_neb[:-1] = 0.0
+    sfz_tot_neb[:-1] = 0.0
     
     # getting gas metallicity
     gas_logz = sub_logzgas[idx_gal]
@@ -238,7 +211,7 @@ for idx_gal in range(n_gal):
         dist = get_lumdist(redshift)
         tobs = get_age(redshift)
         # TODO: might have to change this
-        
+
     # fitting SED
     if np.sum(sfh_tot_continuum) > 0. and np.sum(sfz_tot_continuum) >= 0.:
         sp = fsps.StellarPopulation(compute_vega_mags=False, zcontinuous=3, \
@@ -286,6 +259,7 @@ for idx_gal in range(n_gal):
     # adding the two magnitudes
     ugriz = -2.5*np.log10(np.power(10, -0.4*ugriz_continuum) + np.power(10, -0.4*ugriz_neb))
 
+    
     if skip_lowmass and log_star_mass[idx_gal] < low_mass:
         ugriz[:] = 10000000000.
     
@@ -296,6 +270,7 @@ for idx_gal in range(n_gal):
         id_ugriz_mass_gal[idx_gal,1+len(bands)+1+len(bands)+i_band] = ugriz_neb[i_band]
     id_ugriz_mass_gal[idx_gal,1+len(bands)] = sp_stellar_mass
     print(id_ugriz_mass_gal[idx_gal])
+
 
 # save the magnitudes and stellar masses
 np.save("mags_data/"+tng+"_"+snap+"_"+cam_filt+"_id_ugriz_mass_lum_"+str(idx_start)+"_"+str(idx_start+n_gal)+"_tauV_SFH"+sfh_ap+dust_reddening+want_random+".npy",id_ugriz_mass_gal)

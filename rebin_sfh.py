@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
+# TODO: can certainly be optimized!!!
 
 def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz):
 
@@ -44,7 +45,7 @@ def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, 
     sfz_new = sfz_new[::-1]
     sfr_new = sfr_new[::-1]
 
-    return tbins_new, sfz_new, sfr_new
+    return tbins_new, sfr_new, sfz_new
 
 
 def main():
