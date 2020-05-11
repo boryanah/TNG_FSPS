@@ -5,8 +5,8 @@ import fsps
 from mpi4py import MPI
 from astropy.cosmology import FlatLambdaCDM
 import astropy.units as u
-# Usage mpirun -np 60 python get_mags_tauV_sfh.py
-# check lowmass, tauV params, aperture, reddening, random, redshift, tng
+# Usage mpirun -np 40 python get_mags_tauV_sfh.py
+# select lowmass, tauV params, aperture, reddening, random, redshift, tng
 
 # constants
 solar_metal = 0.0127
@@ -21,35 +21,51 @@ def get_lumdist(z):
 def get_age(z):
     return cosmo.age(z).value # in Gyr
 
-# get cosmology
+# get cosmology of TNG
+# TODO: is this what Sandro uses?
 cosmo = FlatLambdaCDM(H0=h*100.*u.km/u.s/u.Mpc, Tcmb0=2.7255*u.K, Om0=omega_m)
 
 # parameter choices
 tng = 'tng300'
+z_choice = 0.7
 dust_reddening = '_red'#'_red'#''
-skip_lowmass = 0
-low_mass = 9.5
+skip_lowmass = 1
+low_mass = 10.
 want_random = ''#''#'_scatter'
+if want_random == '_scatter':
+    print("For now we are not incorporating redshift uncertainties")
+    exit(0)
 sfh_ap = '_30kpc'#'_30kpc'#'_3rad'#'_30kpc'#''
 cam_filt = 'sdss_des'
 
-# color bands
+# create a list of the wanted color bands
 bands = []
 filts = cam_filt.split('_')
 for i in range(len(filts)):
     bands += fsps.find_filter(filts[i])
 
-# which redshift, luminosity distance, snapshot and universe age
-redshifts = np.array([1.5, 1.41131, 1.35539, 1.30228, 1.25173, 1.20355, 1.15755, 1.11358, 1.07147, 1.03111, 1, 0.95514, 0.91932, 0.88482, 0.85156, 0.81947, 0.78847, 0.7585, 0.7295, 0.7, 0.5, 0])
-z_choice = np.abs(redshifts - 0.7) < 1.e-3
-assert np.sum(z_choice) == 1, "Problem with picking redshift"
-i_choice = np.argmax(z_choice)
+# list of all redshifts we have
+redshifts = np.array([1.74324, 1.5, 1.41131, 1.35539, 1.30228, 1.25173, 1.20355, 1.15755, 1.11358, 1.07147, 1.03111, 1, 0.95514, 0.91932, 0.88482, 0.85156, 0.81947, 0.78847, 0.7585, 0.7295, 0.7, 0.5, 0])
+
+# index of the selected redshift
+z_selection = np.abs(redshifts - z_choice) < 1.e-3
+assert np.sum(z_selection) == 1, "Data for this redshift doesn't exist"
+i_choice = np.argmax(z_selection)
+
+# these are the corresponding snapshots to the redshifts listed above
 snaps = np.linspace(40,60,20,endpoint=False).astype(int)
 snaps = np.hstack((snaps,np.array([67,99])))
+snaps = np.hstack((np.array([36]),snaps))
+
+# get the luminosity distance and the observed time for all redshifts
 dists = get_lumdist(redshifts)
 tobss = get_age(redshifts)
+
+# the names Boryana has saved in their respective TNG directories
 snap_dirs = ['_'+str(snaps[i]) for i in range(len(redshifts))]
 snap_dirs[-1] = ''
+
+# these are the quanitities pertinent for the selected redshift
 snap = snaps[i_choice]
 snap = format(snap,'03d')
 redshift = redshifts[i_choice]
@@ -61,20 +77,15 @@ if want_random == '_scatter':
     redshift_next = redshifts[i_choice+1]
     z_min = redshift - 0.5*(redshift-redshift_next)
     z_max = redshift + 0.5*(redshift_prev-redshift)
-#if snap == '040': redshift = 1.50; tobs = 4.293; snap_dir = '_40'
-#if snap == '050': redshift = 1.00; tobs = 5.878; snap_dir = '_50'
-#if snap == '059': redshift = 0.70; tobs = 7.314; snap_dir = '_59'
-#if snap == '099': redshift = 0.06; tobs = 13.803; snap_dir = ''
 
-# ELG emission lines
-lambda1 = 3727.092 #3727.1
-lambda2 = 3729.875 #3729.88
+# ELG emission line wavelengths
+lambda1 = 3727.092
+lambda2 = 3729.875
 tol = 0.01
 
-
-# MPI parameters
+# MPI parameters -- how many galaxies per processor
 i_rank = MPI.COMM_WORLD.Get_rank()
-n_gal = 20 # total is 22539 (12520 above logM of 9.5)
+n_gal = 2000
 idx_start = i_rank*n_gal
 inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
@@ -104,20 +115,11 @@ def get_idx_add(t_edge,t_obs,t_boundary):
 def load_data(fname):
     # load hdf5
     f = h5py.File(file_name, 'r')
-
-    '''
-    # TESTING!!!!
-    inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
-    sub_id = f['catsh_id'][:]
-    sub_id = sub_id[inds]
-    inds = [np.argmax(sub_id == 76086)]
-    '''
     
     # load the bin center in Gyr
     tbins = f['info/sfh_tbins'][:]
     #dt = f['info/sfh_dt'][:]
     tedge = f['info/sfh_t_edges'][:]
-    dt = tbins[1]-tbins[0]
     
     # load the in and ex situ sfr and sfz stellar history
     sfh_insitu_sfr = f['sfh_insitu'+sfh_ap+'_sfr'][inds,:]
@@ -170,28 +172,27 @@ def load_data(fname):
     # avoid division by 0 (not used)
     log_sSFR = np.log10(sub_SFR/sub_star_mass)
     log_sSFR[sub_SFR == 0.] = -13.
-    #print(Z_gas_sol, sub_logzgas, sub_logzstar, log_star_mass, S_gas_norm, log_sSFR, sub_id, (sfh_insitu_sfr*dt).sum(), (sfh_exsitu_sfr*dt).sum(), (sfh_insitu_sfz*dt).sum(), (sfh_exsitu_sfz*dt).sum())
+    
     return tedge, Z_gas_sol, sub_logzgas, sub_logzstar, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz
 
 # load file
 # large sample (cents+sats)
 file_name = 'data/galaxies_SFH_'+tng+'_'+snap+'.hdf5'
-# small sample (cents only)
-#file_name = 'data/galaxies_tng100_099_1_SFH.hdf5'
 
 # gather all data for this chunk
 tedge, Z_gas_sol, sub_logzgas, sub_logzstar, log_star_mass, S_gas_norm, S_star_norm, log_sSFR, sub_id, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz = load_data(file_name)
 
-# tau_V parameters for small sample with S_gas_norm
+# tau_V parameters for small (cents only) sample with S_gas_norm
 #alpha, beta, gamma = [0.53067365, 0.22995855, 0.2252313]
-# tau_V parameters for large sample with S_gas_norm
+# tau_V parameters for large (cents+sats) sample with S_gas_norm
 #alpha, beta, gamma = [ 0.83609055, -0.04689114,  0.16439263]
-# tau_V parameters for large sample with S_star_norm
+# tau_V parameters for large (cents+sats) TNG100 sample with S_star_norm
 alpha, beta, gamma = [0.24567538, 0.04542672, 0.2688033]
 # tau_V parameters for tng300 sample with S_star_norm
 #alpha, beta, gamma = [0.06372212, 0.12692061, 0.28552597]
 
 # tau_V ansatz
+# previous ansatz with S_gas_norm
 #tau_V = gamma*Z_gas_sol**alpha*S_gas_norm**beta
 tau_V = gamma*Z_gas_sol**alpha*S_star_norm**beta
 tau_V[np.isinf(tau_V)] = 0.
@@ -218,21 +219,26 @@ for idx_gal in range(n_gal):
     # set SFH of contiuum (neb) to 0
     sfh_tot_continuum, sfz_tot_continuum = np.copy(sfh_tot), np.copy(sfz_tot)
     sfh_tot_neb, sfz_tot_neb = np.copy(sfh_tot), np.copy(sfz_tot)
+    # everything prior to the last 30 Myr is relevant
     sfh_tot_continuum[~idx_continuum] = 0.0
     sfz_tot_continuum[~idx_continuum] = 0.0
+    # everything prior to the last 30 Myr is irrelevant
     sfh_tot_neb[idx_continuum] = 0.0
     sfz_tot_neb[idx_continuum] = 0.0
     
     # getting stellar and gas metallicity
     logzsol = sub_logzstar[idx_gal]
+    gas_logz = sub_logzgas[idx_gal]
+    
+    # choosing the dust parameters
     dust_index = 1.13-0.29*(log_star_mass[idx_gal]-10.)
     dust_index *= -1.
-    gas_logz = sub_logzgas[idx_gal]
     dust2 = tau_V[idx_gal]
     if dust_reddening == '_red':
         dust2 *= (1.+redshift)**(-0.5)
 
     if skip_lowmass and log_star_mass[idx_gal] < low_mass:
+        # set those to 0, in that way the FSPS calculation will be spared
         sfh_tot_continuum[:] = -1
         sfh_tot_neb[:] = -1
 
@@ -256,7 +262,7 @@ for idx_gal in range(n_gal):
         sp_stellar_mass = sp.stellar_mass
     else:
         # we can't predict the values accurately
-        print("no exist cont")
+        print("no exist cont or too low mass")
         ugriz_continuum = np.ones(len(bands))*10000000000.
         sp_stellar_mass = 10.**log_star_mass[idx_gal]
 
@@ -277,15 +283,13 @@ for idx_gal in range(n_gal):
         lums = sp.emline_luminosity # in Lsun
         selection = (lambda1-tol < waves) & (lambda2+tol > waves)
         lumoii = lums[selection]*u.Lsun
-        print(dist)
         dist *= u.Mpc
         fluxoii = lumoii/(4.*np.pi*dist**2)
         flux = (fluxoii.to(u.erg/(u.s*u.cm*u.cm))).value
-        print(flux)
         id_ugriz_mass_gal[idx_gal,1+len(bands)+1+len(bands)+len(bands):] = flux[:]
     else:
         # we can't predict the values accurately
-        print("no exist neb")
+        print("no exist neb or too low mass")
         ugriz_neb = np.ones(len(bands))*10000000000.
 
     # adding the two magnitudes
