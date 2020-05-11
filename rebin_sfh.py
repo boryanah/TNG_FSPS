@@ -1,7 +1,7 @@
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-# TODO: can certainly be optimized!!!
+# TODO: can certainly be optimized! Not a dire issue currently
 
 def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz):
 
@@ -18,8 +18,8 @@ def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, 
     # note that i = 0 is today and i = -1 is the beginning snapshot
     for i in range(n_tbins):
         # select the bins within that time frame
-        idx_bin = (tbins > tobs-lookback_tedges[i+1]) & (tbins < tobs-lookback_tedges[i])
-
+        idx_bin = (tbins >= tobs-lookback_tedges[i+1]) & (tbins < tobs-lookback_tedges[i])
+        
         # happens sometimes at the earliest times (i.e. furthest lookback) so not important
         if np.sum(idx_bin) == 0:
             sfz_new[i] = 0.
@@ -51,18 +51,18 @@ def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, 
 def main():
     # choices
     sfh_ap = '_30kpc'
-    ind = 0
+    ind = 30000
 
     # load hdf5
     tng = 'tng300'
-    snap = '099'#'059'#'099'
+    snap = '059'#'059'#'099'
     file_name = 'data/galaxies_SFH_'+tng+'_'+snap+'.hdf5'
     f = h5py.File(file_name, 'r')
 
     # load the bin center in Gyr
     tbins = f['info/sfh_tbins'][:]
     tedge = f['info/sfh_t_edges'][:]
-    tobs = tedge[-1]#7.309546074921499#tedge[-1]
+    tobs = 7.309546074921499#tedge[-1]
 
     # load the in and ex situ sfr and sfz stellar history
     sfh_insitu_sfr = f['sfh_insitu'+sfh_ap+'_sfr'][ind,:]
@@ -71,10 +71,10 @@ def main():
     sfh_exsitu_sfz = f['sfh_exsitu'+sfh_ap+'_sfz'][ind,:]
     f.close()
 
-    tbins_new, sfz_new, sfr_new = get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz)
+    tbins_new, sfr_new, sfz_new = get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz)
     
     # for the plots
-    want_log = 1
+    want_log = 0
     n_cols = 2
     n_rows = 2
     plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(7.5*n_cols, n_rows*5))
@@ -83,6 +83,7 @@ def main():
     sfr = (sfh_insitu_sfr+sfh_exsitu_sfr)
     sfz = (sfh_insitu_sfz*sfh_insitu_sfr+sfh_exsitu_sfz*sfh_exsitu_sfr)/sfr
     sfz[sfr == 0.] = 0.
+    time = tbins
     if want_log:
         sfz = np.log10(sfz);
         sfz[sfz == np.min(sfz)] = -9.
@@ -91,7 +92,6 @@ def main():
         print("integrated sfr = ",format((np.trapz(10.**sfr, time*1.e9)).sum(),'.2e'))
     else:
         print("integrated sfr = ",format((np.trapz(sfr, time*1.e9)).sum(),'.2e'))
-    time = tbins
 
     # plotting
     i_plot = 0
@@ -109,6 +109,8 @@ def main():
 
     sfr = sfr_new
     sfz = sfz_new
+    print(sfr[-1])
+    time = tbins_new
     if want_log:
         sfz = np.log10(sfz);
         sfz[sfz == np.min(sfz)] = -9.
@@ -117,7 +119,6 @@ def main():
         print("integrated sfr = ",format((np.trapz(10.**sfr, time*1.e9)).sum(),'.2e'))
     else:
         print("integrated sfr = ",format((np.trapz(sfr, time*1.e9)).sum(),'.2e'))
-    time = tbins_new
     
 
     # plotting
@@ -138,4 +139,3 @@ def main():
     # set axes
     plt.savefig("sfh.png")
     plt.show()
-
