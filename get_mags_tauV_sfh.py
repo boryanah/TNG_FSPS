@@ -17,7 +17,7 @@ omega_l = 0.6911
 omega_m = 0.3089
 
 def get_lumdist(z):
-    return cosmo.luminosity_distance(z).value # in Mpc
+    return cosmo.luminosity_distance(z) # in Mpc
 
 def get_age(z):
     return cosmo.age(z).value # in Gyr
@@ -28,16 +28,18 @@ cosmo = FlatLambdaCDM(H0=h*100.*u.km/u.s/u.Mpc, Tcmb0=2.7255*u.K, Om0=omega_m)
 
 # parameter choices
 tng = 'tng300'
-z_choice = 0.7
+z_choice = 0.81947
 dust_reddening = '_red'#'_red'#''
 skip_lowmass = 1
 low_mass = 10.
 want_random = ''#''#'_scatter'
+sfh_ap = '_30kpc'#'_30kpc'#'_3rad'#'_30kpc'#''
+cam_filt = 'sdss_des'
+
+# No implementation error
 if want_random == '_scatter':
     print("For now we are not incorporating redshift uncertainties")
     exit(0)
-sfh_ap = '_30kpc'#'_30kpc'#'_3rad'#'_30kpc'#''
-cam_filt = 'sdss_des'
 
 # create a list of the wanted color bands
 bands = []
@@ -68,6 +70,10 @@ snap = format(snap,'03d')
 redshift = redshifts[i_choice]
 tobs = tobss[i_choice]
 dist = dists[i_choice]
+print("lum dist = ",dist)
+print("snap = ",snap)
+
+
 if want_random == '_scatter':
     redshift_prev = redshifts[i_choice-1]
     redshift_next = redshifts[i_choice+1]
@@ -247,7 +253,6 @@ for idx_gal in range(n_gal):
         lums = sp.emline_luminosity # in Lsun
         selection = (lambda1-tol < waves) & (lambda2+tol > waves)
         lumoii = lums[selection]*u.Lsun
-        dist *= u.Mpc
         fluxoii = lumoii/(4.*np.pi*dist**2)
         flux = (fluxoii.to(u.erg/(u.s*u.cm*u.cm))).value
         id_ugriz_mass_gal[idx_gal,1+len(bands)+1+len(bands)+len(bands):] = flux[:]
