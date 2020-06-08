@@ -7,6 +7,7 @@ def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, 
 
     # lookback times
     lookback_tedges = np.arange(0.,tobs,0.1)
+    #lookback_tedges = np.arange(0.,tobs,0.01)# TESTING
     lookback_tedges = np.insert(lookback_tedges,1,0.03)
     lookback_tbins = np.diff(lookback_tedges)*.5+lookback_tedges[:-1]
 

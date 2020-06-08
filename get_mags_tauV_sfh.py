@@ -28,7 +28,7 @@ cosmo = FlatLambdaCDM(H0=h*100.*u.km/u.s/u.Mpc, Tcmb0=2.7255*u.K, Om0=omega_m)
 
 # parameter choices
 tng = 'tng300'
-z_choice = 0.81947
+z_choice = 1.41131#1.11358#0.81947#1.41131#1.11358#0.#0.81947#1.
 dust_reddening = '_red'#'_red'#''
 skip_lowmass = 1
 low_mass = 10.
@@ -70,8 +70,12 @@ snap = format(snap,'03d')
 redshift = redshifts[i_choice]
 tobs = tobss[i_choice]
 dist = dists[i_choice]
+# We have observational data at z = 0.06
+if np.abs(z_choice-0.) < 1.e-3: redshift = 0.06
+print("redshift = ",redshift)
 print("lum dist = ",dist)
 print("snap = ",snap)
+print("age = ",tobs)
 
 
 if want_random == '_scatter':
@@ -87,7 +91,7 @@ tol = 0.01
 
 # MPI parameters -- how many galaxies per processor
 i_rank = MPI.COMM_WORLD.Get_rank()
-n_gal = 2000
+n_gal = 1610#1800#2000#1610
 idx_start = i_rank*n_gal
 inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
@@ -162,9 +166,11 @@ tbins, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR,
 # tau_V parameters for large (cents+sats) sample with S_gas_norm
 #alpha, beta, gamma = [ 0.83609055, -0.04689114,  0.16439263]
 # tau_V parameters for large (cents+sats) TNG100 sample with S_star_norm
-alpha, beta, gamma = [0.24567538, 0.04542672, 0.2688033]
+#alpha, beta, gamma = [0.24567538, 0.04542672, 0.2688033]
 # tau_V parameters for tng300 sample with S_star_norm
 #alpha, beta, gamma = [0.06372212, 0.12692061, 0.28552597]
+# tau_V parameters for tng300 sample with S_star_norm fit for logM > 10.
+alpha, beta, gamma = [-0.568054029888017, 0.23041510405059215, 0.39155017299457057]
 
 # tau_V ansatz
 # previous ansatz with S_gas_norm
@@ -238,6 +244,7 @@ for idx_gal in range(n_gal):
 
     if np.sum(sfh_tot_neb) > 0.:
         logzstar_neb = np.log10(np.sum(sfh_tot_neb*sfz_tot_neb) / np.sum(sfh_tot_neb) / solar_metal)
+        #gas_logu = -2.5, #TESTING
         sp = fsps.StellarPopulation(compute_vega_mags=False, zcontinuous=1, \
                                     imf_type=1, add_neb_emission=True, gas_logu=-1.4, \
                                     gas_logz=gas_logz, sfh=3, logzsol=logzstar_neb,\
