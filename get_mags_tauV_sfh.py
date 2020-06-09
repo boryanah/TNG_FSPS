@@ -6,6 +6,7 @@ from mpi4py import MPI
 from astropy.cosmology import FlatLambdaCDM
 import astropy.units as u
 from rebin_sfh import get_SFH_binned
+from convolve_with_filter import get_mags
 # Usage mpirun -np 40 python get_mags_tauV_sfh.py
 # select lowmass, tauV params, aperture, reddening, random, redshift, tng100/300
 
@@ -28,13 +29,14 @@ cosmo = FlatLambdaCDM(H0=h*100.*u.km/u.s/u.Mpc, Tcmb0=2.7255*u.K, Om0=omega_m)
 
 # parameter choices
 tng = 'tng300'
-z_choice = 1.41131#1.11358#0.81947#1.41131#1.11358#0.#0.81947#1.
+z_choice = 0.81947#1.41131#1.11358#0.81947#1.41131#1.11358#0.#0.81947#1.
 dust_reddening = '_red'#'_red'#''
 skip_lowmass = 1
 low_mass = 10.
 want_random = ''#''#'_scatter'
 sfh_ap = '_30kpc'#'_30kpc'#'_3rad'#'_30kpc'#''
-cam_filt = 'sdss_des'
+cam_filt = 'sdss_desi' # should be desi
+# TESTING
 
 # No implementation error
 if want_random == '_scatter':
@@ -42,11 +44,15 @@ if want_random == '_scatter':
     exit(0)
 
 # create a list of the wanted color bands
+
 bands = []
 filts = cam_filt.split('_')
 for i in range(len(filts)):
     bands += fsps.find_filter(filts[i])
 
+# TESTING
+bands = ['sdss_u0','sdss_g0','sdss_r0','sdss_i0','sdss_z0','decam_g','decam_r','decam_i','decam_z','decam_Y']
+    
 # list of all redshifts we have
 redshifts = np.array([1.74324, 1.5, 1.41131, 1.35539, 1.30228, 1.25173, 1.20355, 1.15755, 1.11358, 1.07147, 1.03111, 1, 0.95514, 0.91932, 0.88482, 0.85156, 0.81947, 0.78847, 0.7585, 0.7295, 0.7, 0.5, 0])
 
@@ -91,7 +97,7 @@ tol = 0.01
 
 # MPI parameters -- how many galaxies per processor
 i_rank = MPI.COMM_WORLD.Get_rank()
-n_gal = 1610#1800#2000#1610
+n_gal = 2000#1800#2000#1610
 idx_start = i_rank*n_gal
 inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
@@ -234,7 +240,10 @@ for idx_gal in range(n_gal):
         sp.set_tabular_sfh(time, sfh_tot_continuum, Z=sfz_tot_continuum)
     
         # convolving with a filter and getting the magnitudes at some redshift
-        ugriz_continuum = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
+        wave, spec = sp.get_spectrum(tage=tobs)
+        ugriz_continuum = get_mags(wave,spec,redshift,bands)
+        # TESTING
+        #ugriz_continuum = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
         sp_stellar_mass = sp.stellar_mass
     else:
         # we can't predict the values accurately
@@ -244,7 +253,6 @@ for idx_gal in range(n_gal):
 
     if np.sum(sfh_tot_neb) > 0.:
         logzstar_neb = np.log10(np.sum(sfh_tot_neb*sfz_tot_neb) / np.sum(sfh_tot_neb) / solar_metal)
-        #gas_logu = -2.5, #TESTING
         sp = fsps.StellarPopulation(compute_vega_mags=False, zcontinuous=1, \
                                     imf_type=1, add_neb_emission=True, gas_logu=-1.4, \
                                     gas_logz=gas_logz, sfh=3, logzsol=logzstar_neb,\
@@ -253,7 +261,10 @@ for idx_gal in range(n_gal):
         sp.set_tabular_sfh(time, sfh_tot_neb, Z=None)
 
         # convolving with a filter and getting the magnitudes at some redshift
-        ugriz_neb = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
+        wave, spec = sp.get_spectrum(tage=tobs)
+        ugriz_neb = get_mags(wave,spec,redshift,bands)
+        # TESTING
+        #ugriz_neb = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
 
         # OII emission lines
         waves = sp.emline_wavelengths # in Angstroms
