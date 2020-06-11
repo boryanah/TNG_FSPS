@@ -30,12 +30,12 @@ cosmo = FlatLambdaCDM(H0=h*100.*u.km/u.s/u.Mpc, Tcmb0=2.7255*u.K, Om0=omega_m)
 # parameter choices
 tng = 'tng300'
 z_choice = 0.81947#1.41131#1.11358#0.81947#1.41131#1.11358#0.#0.81947#1.
-dust_reddening = '_red'#'_red'#''
-skip_lowmass = 1
+dust_reddening = ''#'_red'#'_red'#''
+skip_lowmass = 0
 low_mass = 10.
 want_random = ''#''#'_scatter'
 sfh_ap = '_30kpc'#'_30kpc'#'_3rad'#'_30kpc'#''
-cam_filt = 'sdss_desi' # should be desi
+cam_filt = 'sdss_desi' # should be desi; we used to use des
 # TESTING
 
 # No implementation error
@@ -44,7 +44,6 @@ if want_random == '_scatter':
     exit(0)
 
 # create a list of the wanted color bands
-
 bands = []
 filts = cam_filt.split('_')
 for i in range(len(filts)):
@@ -52,7 +51,8 @@ for i in range(len(filts)):
 
 # TESTING
 bands = ['sdss_u0','sdss_g0','sdss_r0','sdss_i0','sdss_z0','decam_g','decam_r','decam_i','decam_z','decam_Y']
-    
+print(bands)
+
 # list of all redshifts we have
 redshifts = np.array([1.74324, 1.5, 1.41131, 1.35539, 1.30228, 1.25173, 1.20355, 1.15755, 1.11358, 1.07147, 1.03111, 1, 0.95514, 0.91932, 0.88482, 0.85156, 0.81947, 0.78847, 0.7585, 0.7295, 0.7, 0.5, 0])
 
@@ -241,7 +241,9 @@ for idx_gal in range(n_gal):
     
         # convolving with a filter and getting the magnitudes at some redshift
         wave, spec = sp.get_spectrum(tage=tobs)
-        ugriz_continuum = get_mags(wave,spec,redshift,bands)
+        #formed_mass = np.trapz(sfh_tot_continuum,time*1.e9)
+        formed_mass = 1.
+        ugriz_continuum = get_mags(wave,spec,redshift,dist.value,formed_mass,bands)
         # TESTING
         #ugriz_continuum = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
         sp_stellar_mass = sp.stellar_mass
@@ -258,11 +260,17 @@ for idx_gal in range(n_gal):
                                     gas_logz=gas_logz, sfh=3, logzsol=logzstar_neb,\
                                     dust_type=0, dust_index=dust_index, dust2=dust2,\
                                     dust1_index=-1,dust1=dust2)
+        # Ben's correction
+        time = np.array([tobs-0.0301,tobs-0.03,tobs])
+        sfh_tot_neb = np.array([0.,sfh_tot_neb[-1],0.])
+        
         sp.set_tabular_sfh(time, sfh_tot_neb, Z=None)
 
         # convolving with a filter and getting the magnitudes at some redshift
         wave, spec = sp.get_spectrum(tage=tobs)
-        ugriz_neb = get_mags(wave,spec,redshift,bands)
+        #formed_mass = np.trapz(sfh_tot_neb,time*1.e9)
+        formed_mass = 1.
+        ugriz_neb = get_mags(wave,spec,redshift,dist.value,formed_mass,bands)
         # TESTING
         #ugriz_neb = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
 
