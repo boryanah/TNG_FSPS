@@ -1,8 +1,12 @@
 from sedpy.observate import getSED, load_filters
 import numpy as np
 
+def mgy_to_mag(f):
+    return 22.5-2.5*np.log10(f*1.e9)
+
 # wave, spectrum come from FSPS (as well as redshift)
-def get_mags(wave,spectrum,z,filterlist):
+def get_mags(wave,spectrum,z,lumdist,formed_mass,filterlist):
+    
     # filter parameters
     filters = load_filters(filterlist)
 
@@ -10,9 +14,17 @@ def get_mags(wave,spectrum,z,filterlist):
     a = 1+z
     wa, sa = wave*a, spectrum*a
 
-    # get the color magnitudes
+    # get the absolute magnitudes
     mags = getSED(wa, lightspeed/wa**2 * sa * to_cgs, filters)
-    return mags
+    phot = np.atleast_1d(10**(-0.4 * mags))
+    
+    # get the observed magnitudes
+    dfactor = (lumdist*1e5)**2
+    phot /= dfactor
+    phot *= formed_mass
+    phot = mgy_to_mag(phot)
+    
+    return phot
 
 # spectrum : Spectrum in Lsun/Hz per solar mass formed, restframe
 #filters = load_filters(filternames, directory=filter_folder)
