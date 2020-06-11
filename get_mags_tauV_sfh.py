@@ -98,7 +98,7 @@ tol = 0.01
 # MPI parameters -- how many galaxies per processor
 i_rank = MPI.COMM_WORLD.Get_rank()
 n_gal = 2000#1800#2000#1610
-idx_start = i_rank*n_gal
+idx_start = 40000+i_rank*n_gal
 inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
 id_ugriz_mass_gal = np.zeros((n_gal,1+len(bands)+1+len(bands)+len(bands)+2))
@@ -262,7 +262,11 @@ for idx_gal in range(n_gal):
                                     dust1_index=-1,dust1=dust2)
         # Ben's correction
         time = np.array([tobs-0.0301,tobs-0.03,tobs])
-        sfh_tot_neb = np.array([0.,sfh_tot_neb[-1],0.])
+        sfh_tot_neb = np.array([0.,sfh_tot_neb[-1],sfh_tot_neb[-1]])
+        print(time[-3:],tobs)
+        
+        #time = np.array([tobs-0.0301,tobs-0.02,tobs-0.01])
+        #sfh_tot_neb = np.array([0.,sfh_tot_neb[-1]/2.,sfh_tot_neb[-1]/2.])
         
         sp.set_tabular_sfh(time, sfh_tot_neb, Z=None)
 
