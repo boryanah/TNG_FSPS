@@ -35,8 +35,7 @@ skip_lowmass = 0
 low_mass = 10.
 want_random = ''#''#'_scatter'
 sfh_ap = '_30kpc'#'_30kpc'#'_3rad'#'_30kpc'#''
-cam_filt = 'sdss_desi' # should be desi; we used to use des
-# TESTING
+cam_filt = 'sdss_desi' # should be desi; use des with fsps filters
 
 # No implementation error
 if want_random == '_scatter':
@@ -49,7 +48,7 @@ filts = cam_filt.split('_')
 for i in range(len(filts)):
     bands += fsps.find_filter(filts[i])
 
-# TESTING
+# If using the sedpy magnitudes with decam filters
 bands = ['sdss_u0','sdss_g0','sdss_r0','sdss_i0','sdss_z0','decam_g','decam_r','decam_i','decam_z','decam_Y']
 print(bands)
 
@@ -98,7 +97,7 @@ tol = 0.01
 # MPI parameters -- how many galaxies per processor
 i_rank = MPI.COMM_WORLD.Get_rank()
 n_gal = 2000#1800#2000#1610
-idx_start = 40000+i_rank*n_gal
+idx_start = i_rank*n_gal
 inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
 id_ugriz_mass_gal = np.zeros((n_gal,1+len(bands)+1+len(bands)+len(bands)+2))
@@ -196,7 +195,8 @@ for idx_gal in range(n_gal):
     sfz_exsitu = sfh_exsitu_sfz[idx_gal]
 
     # get the new values after adding 30 Myr bin
-    tbins_new, sfh_tot, sfz_tot = get_SFH_binned(tobs, tbins, sfh_insitu, sfh_exsitu, sfz_insitu, sfz_exsitu)
+    time_neb = 0.03#0.02#0.03
+    tbins_new, sfh_tot, sfz_tot = get_SFH_binned(tobs, tbins, sfh_insitu, sfh_exsitu, sfz_insitu, sfz_exsitu,time_neb=time_neb)
     time = tbins_new
     
     # set SFH of contiuum (neb) to 0
@@ -211,9 +211,11 @@ for idx_gal in range(n_gal):
     
     # getting gas metallicity
     gas_logz = sub_logzgas[idx_gal]
+    gas_logu = -1.4#-2.5#-1.4 og#TESTING
     
     # choosing the dust parameters
-    dust_index = 1.13-0.29*(log_star_mass[idx_gal]-10.)
+    #dust_index = 1.13-0.29*(log_star_mass[idx_gal]-10.)
+    dust_index = 0.7#TESTING
     dust_index *= -1.
     dust2 = tau_V[idx_gal]
     if dust_reddening == '_red':
@@ -233,18 +235,20 @@ for idx_gal in range(n_gal):
     # fitting SED
     if np.sum(sfh_tot_continuum) > 0. and np.sum(sfz_tot_continuum) >= 0.:
         sp = fsps.StellarPopulation(compute_vega_mags=False, zcontinuous=3, \
-                                    imf_type=1, add_neb_emission=False, gas_logu=-1.4, \
+                                    imf_type=1, add_neb_emission=False, gas_logu=gas_logu, \
                                     gas_logz=gas_logz, sfh=3, logzsol=0.0,\
                                     dust_type=0, dust_index=dust_index, dust2=dust2,\
                                     dust1_index=-1,dust1=dust2)
         sp.set_tabular_sfh(time, sfh_tot_continuum, Z=sfz_tot_continuum)
-    
+        
         # convolving with a filter and getting the magnitudes at some redshift
         wave, spec = sp.get_spectrum(tage=tobs)
         #formed_mass = np.trapz(sfh_tot_continuum,time*1.e9)
+        # needs to input formed mass of 1 for sedpy
         formed_mass = 1.
+        # DECam filters
         ugriz_continuum = get_mags(wave,spec,redshift,dist.value,formed_mass,bands)
-        # TESTING
+        # DES filters
         #ugriz_continuum = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
         sp_stellar_mass = sp.stellar_mass
     else:
@@ -256,26 +260,24 @@ for idx_gal in range(n_gal):
     if np.sum(sfh_tot_neb) > 0.:
         logzstar_neb = np.log10(np.sum(sfh_tot_neb*sfz_tot_neb) / np.sum(sfh_tot_neb) / solar_metal)
         sp = fsps.StellarPopulation(compute_vega_mags=False, zcontinuous=1, \
-                                    imf_type=1, add_neb_emission=True, gas_logu=-1.4, \
+                                    imf_type=1, add_neb_emission=True, gas_logu=gas_logu, \
                                     gas_logz=gas_logz, sfh=3, logzsol=logzstar_neb,\
                                     dust_type=0, dust_index=dust_index, dust2=dust2,\
                                     dust1_index=-1,dust1=dust2)
         # Ben's correction
-        time = np.array([tobs-0.0301,tobs-0.03,tobs])
+        time = np.array([tobs-time_neb-0.0001,tobs-time_neb,tobs])
         sfh_tot_neb = np.array([0.,sfh_tot_neb[-1],sfh_tot_neb[-1]])
-        print(time[-3:],tobs)
-        
-        #time = np.array([tobs-0.0301,tobs-0.02,tobs-0.01])
-        #sfh_tot_neb = np.array([0.,sfh_tot_neb[-1]/2.,sfh_tot_neb[-1]/2.])
         
         sp.set_tabular_sfh(time, sfh_tot_neb, Z=None)
 
         # convolving with a filter and getting the magnitudes at some redshift
         wave, spec = sp.get_spectrum(tage=tobs)
         #formed_mass = np.trapz(sfh_tot_neb,time*1.e9)
+        # needs to input formed mass of 1 for sedpy
         formed_mass = 1.
+        # DECam filters
         ugriz_neb = get_mags(wave,spec,redshift,dist.value,formed_mass,bands)
-        # TESTING
+        # DES filters
         #ugriz_neb = sp.get_mags(tage=tobs, redshift=redshift, bands=bands)
 
         # OII emission lines

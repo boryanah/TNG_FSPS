@@ -3,12 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 # TODO: can certainly be optimized! Not a dire issue currently
 
-def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz):
+def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz,time_neb=0.03,time_bin=0.1):
 
     # lookback times
-    lookback_tedges = np.arange(0.,tobs,0.1)
-    #lookback_tedges = np.arange(0.,tobs,0.01)# TESTING
-    lookback_tedges = np.insert(lookback_tedges,1,0.03)
+    lookback_tedges = np.arange(0.,tobs,time_bin)
+    lookback_tedges = np.insert(lookback_tedges,1,time_neb)
     lookback_tbins = np.diff(lookback_tedges)*.5+lookback_tedges[:-1]
 
     # create final arrays
