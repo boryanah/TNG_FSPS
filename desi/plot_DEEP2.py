@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from astropy.io import fits
-import fsps
 from photometric_scatter import get_scatter
 import sys
 
@@ -46,7 +45,7 @@ def make_scatter_histogram(x,y,z,w,s=0.1,al=0.3):
 
     # the scatter plot:
     ax_scatter.scatter(x, y,s=s,color='b',alpha=al,label='TNG-FSPS')
-    ax_scatter.scatter(z, w,s=s,color='k',label='DEEP2-DR8')
+    ax_scatter.scatter(z, w,s=s,color='r',label='DEEP2-DR8')
     ax_scatter.set_xlabel("r-z")
     ax_scatter.set_ylabel("g-r")
     mean_z = np.mean(z[np.logical_not(np.isnan(z) | np.isinf(z))])
@@ -57,15 +56,16 @@ def make_scatter_histogram(x,y,z,w,s=0.1,al=0.3):
     # now determine nice limits by hand:
     binwidth = 0.05
     lim = np.ceil(np.abs([x, y]).max() / binwidth) * binwidth
-    ax_scatter.set_xlim((-1, lim))
-    ax_scatter.set_ylim((-1, lim))
+    lim = 2.5
+    ax_scatter.set_xlim((-0.5, lim))
+    ax_scatter.set_ylim((-0.5, lim))
     ax_scatter.legend()
     
     bins = np.arange(-lim, lim + binwidth, binwidth)
     ax_histx.hist(x,bins=bins,histtype='step',color='b',density=True)
     ax_histy.hist(y,bins=bins,histtype='step',color='b',density=True,orientation='horizontal')
-    ax_histx.hist(z,bins=bins,histtype='step',color='k',density=True)
-    ax_histy.hist(w,bins=bins,histtype='step',color='k',density=True,orientation='horizontal')
+    ax_histx.hist(z,bins=bins,histtype='step',color='r',density=True)
+    ax_histy.hist(w,bins=bins,histtype='step',color='r',density=True,orientation='horizontal')
 
     ax_histx.set_xlim(ax_scatter.get_xlim())
     ax_histy.set_ylim(ax_scatter.get_ylim())
@@ -76,7 +76,7 @@ def make_scatter_histogram(x,y,z,w,s=0.1,al=0.3):
 snap = sys.argv[1]
 if snap == '041': z_min = 1.3; z_max = 1.5; 
 if snap == '047': z_min = 1.; z_max = 1.2;
-if snap == '055': z_min = .7; z_max = .9;
+if snap == '055': z_min = .8; z_max = .85;
 
 z_sel2 = (z_min < dat2['RED_Z']) & (dat2['RED_Z'] < z_max)
 z_sel3 = (z_min < dat3['RED_Z']) & (dat3['RED_Z'] < z_max)
@@ -134,13 +134,12 @@ if snap == '041': redshift = 1.41131; snap_dir = '_41'; n_gal = 64400
 if snap == '047': redshift = 1.11358; snap_dir = '_47'; n_gal = 72000
 if snap == '055': redshift = 0.81947; snap_dir = '_55'; n_gal = 80000
 if snap == '067': redshift = 0.50000; snap_dir = '_67'
-cam_filt = 'sdss_des'
-filts = cam_filt.split('_')
-bands = []
-for i in range(len(filts)):
-    bands += fsps.find_filter(filts[i])
-print(bands)
+# color filters
+cam_filt = 'sdss_desi'
+bands = ['sdss_u0','sdss_g0','sdss_r0','sdss_i0','sdss_z0','decam_g','decam_r','decam_i','decam_z','decam_Y']
+
 sfh_ap = '_30kpc'#'_3rad'#'_30kpc'#''
+dust_index = '_0.0'#'_-0.5'#'_0.0'#'_-0.0'#'_-0.1'#'_-0.7'#'_-0.4'#''
 idx_start = 0
 if len(sys.argv) > 2:
     want_reddening = sys.argv[2]
@@ -148,8 +147,9 @@ else:
     want_reddening = ''#'_red'#''#'_red'
 if want_reddening == '': zterm = '_nored'
 if want_reddening == '_red': zterm = ''
+# this is intrinsic FSPS scatter
 want_scatter = ''#'_scatter'
-want_photo_scatter = 0
+want_photo_scatter = 1
 if want_photo_scatter:
     photo_scatter = ''
 else:
@@ -159,15 +159,16 @@ else:
 
 #fsps_output = np.load("../mags_data/big/"+tng+"_"+snap+"_"+cam_filt+"_id_ugriz_mass_"+str(idx_start)+"_"+str(idx_start+n_gal)+"_tauV_SFH"+sfh_ap+".npy")
 # TNG300
-fsps_output = np.load("../mags_data/big/"+tng+"_"+snap+"_"+cam_filt+"_id_ugriz_mass_lum_"+str(idx_start)+"_"+str(idx_start+n_gal)+"_tauV_SFH"+sfh_ap+want_reddening+want_scatter+".npy")
+fsps_output = np.load("../mags_data/big/"+tng+"_"+snap+"_"+cam_filt+"_id_ugriz_mass_lum_"+str(idx_start)+"_"+str(idx_start+n_gal)+"_tauV_SFH"+dust_index+sfh_ap+want_reddening+want_scatter+".npy")
 
 ugriz_grizy = fsps_output[:,1:len(bands)+1]
 stellar_mass = fsps_output[:,1+len(bands)]
 
 if want_photo_scatter:
-    g_dec_sp = get_scatter(ugriz_grizy[:,5],g_lim)
-    r_dec_sp = get_scatter(ugriz_grizy[:,6],r_lim)
-    z_dec_sp = get_scatter(ugriz_grizy[:,8],z_lim)
+    fac = 1.#0.6
+    g_dec_sp = get_scatter(ugriz_grizy[:,5],g_lim,factor=fac)
+    r_dec_sp = get_scatter(ugriz_grizy[:,6],r_lim,factor=fac)
+    z_dec_sp = get_scatter(ugriz_grizy[:,8],z_lim,factor=fac)
 else:
     g_dec_sp = ugriz_grizy[:,5]
     r_dec_sp = ugriz_grizy[:,6]
