@@ -8,7 +8,7 @@ import astropy.units as u
 from rebin_sfh import get_SFH_binned
 from convolve_with_filter import get_mags
 # Usage mpirun -np 40 python get_mags_tauV_sfh.py
-# select lowmass, tauV params, aperture, reddening, random, redshift, tng100/300
+# select lowmass, tauV params, aperture, reddening, random, redshift, tng100/300, dust index and dust1
 
 # constants
 solar_metal = 0.0127
@@ -29,7 +29,7 @@ cosmo = FlatLambdaCDM(H0=h*100.*u.km/u.s/u.Mpc, Tcmb0=2.7255*u.K, Om0=omega_m)
 
 # parameter choices
 tng = 'tng300'
-z_choice = 0.81947#1.41131#1.11358#0.81947#1.41131#1.11358#0.#0.81947#1.
+z_choice = 1.41131#0.81947#1.41131#0.81947#1.41131#1.11358#0.#0.81947#1.
 dust_reddening = ''#'_red'#'_red'#''
 skip_lowmass = 0
 low_mass = 10.
@@ -96,7 +96,7 @@ tol = 0.01
 
 # MPI parameters -- how many galaxies per processor
 i_rank = MPI.COMM_WORLD.Get_rank()
-n_gal = 2000#1800#2000#1610
+n_gal = 300#1610#122#1800#1800#2000#1610
 idx_start = i_rank*n_gal
 inds = np.arange(idx_start,idx_start+n_gal,dtype=int)
 print("start, end = ",idx_start,idx_start+n_gal)
@@ -170,7 +170,7 @@ tbins, Z_gas_sol, sub_logzgas, log_star_mass, S_gas_norm, S_star_norm, log_sSFR,
 #alpha, beta, gamma = [0.53067365, 0.22995855, 0.2252313]
 # tau_V parameters for large (cents+sats) sample with S_gas_norm
 #alpha, beta, gamma = [ 0.83609055, -0.04689114,  0.16439263]
-# tau_V parameters for large (cents+sats) TNG100 sample with S_star_norm
+# tau_V parameters for large (cents+sats) TNG100 sample with S_star_norm #TESTING
 #alpha, beta, gamma = [0.24567538, 0.04542672, 0.2688033]
 # tau_V parameters for tng300 sample with S_star_norm
 #alpha, beta, gamma = [0.06372212, 0.12692061, 0.28552597]
@@ -211,16 +211,20 @@ for idx_gal in range(n_gal):
     
     # getting gas metallicity
     gas_logz = sub_logzgas[idx_gal]
-    gas_logu = -1.4#-2.5#-1.4 og#TESTING
+    gas_logu = -1.4#-2.5# default is -1.4
     
     # choosing the dust parameters
+    # default is:
     #dust_index = 1.13-0.29*(log_star_mass[idx_gal]-10.)
-    dust_index = 0.7#TESTING
+    dust_index = -0.0#0.#0.4#0.7#TESTING
     dust_index *= -1.
+    dust1_index = 0.0#-0.5#-0.5 #default is -1
     dust2 = tau_V[idx_gal]
+    dust2 += 1.
     if dust_reddening == '_red':
         dust2 *= (1.+redshift)**(-0.5)
-
+    dust1 = 1.#0.9#dust2#3.#0.5#0.75#1.#1.5# default is dust2
+        
     if skip_lowmass and log_star_mass[idx_gal] < low_mass:
         # set those to 0, in that way the FSPS calculation will be spared
         sfh_tot_continuum[:] = -1
@@ -238,7 +242,7 @@ for idx_gal in range(n_gal):
                                     imf_type=1, add_neb_emission=False, gas_logu=gas_logu, \
                                     gas_logz=gas_logz, sfh=3, logzsol=0.0,\
                                     dust_type=0, dust_index=dust_index, dust2=dust2,\
-                                    dust1_index=-1,dust1=dust2)
+                                    dust1_index=dust1_index,dust1=dust1)
         sp.set_tabular_sfh(time, sfh_tot_continuum, Z=sfz_tot_continuum)
         
         # convolving with a filter and getting the magnitudes at some redshift
@@ -263,7 +267,7 @@ for idx_gal in range(n_gal):
                                     imf_type=1, add_neb_emission=True, gas_logu=gas_logu, \
                                     gas_logz=gas_logz, sfh=3, logzsol=logzstar_neb,\
                                     dust_type=0, dust_index=dust_index, dust2=dust2,\
-                                    dust1_index=-1,dust1=dust2)
+                                    dust1_index=dust1_index,dust1=dust1)
         # Ben's correction
         time = np.array([tobs-time_neb-0.0001,tobs-time_neb,tobs])
         sfh_tot_neb = np.array([0.,sfh_tot_neb[-1],sfh_tot_neb[-1]])
@@ -310,7 +314,7 @@ for idx_gal in range(n_gal):
 
 
 # save the magnitudes and stellar masses
-np.save("mags_data/"+tng+"_"+snap+"_"+cam_filt+"_id_ugriz_mass_lum_"+str(idx_start)+"_"+str(idx_start+n_gal)+"_tauV_SFH"+sfh_ap+dust_reddening+want_random+".npy",id_ugriz_mass_gal)
+np.save("mags_data/"+tng+"_"+snap+"_"+cam_filt+"_id_ugriz_mass_lum_"+str(idx_start)+"_"+str(idx_start+n_gal)+"_tauV_SFH"+"_"+str(dust_index)+sfh_ap+dust_reddening+want_random+".npy",id_ugriz_mass_gal)
 
 # all fields
 #['catgrp_GroupNsubs','catgrp_Group_M_Crit200','catgrp_id','catgrp_is_primary','catsh_SubhaloBHMdot','catsh_SubhaloCM','catsh_SubhaloGasMetallicity','catsh_SubhaloGrNr','catsh_SubhaloHalfmassRadType','catsh_SubhaloMassInHalfRadType','catsh_SubhaloMassInRadType','catsh_SubhaloMassType','catsh_SubhaloPos','catsh_SubhaloSFR','catsh_SubhaloSpin','catsh_SubhaloStellarPhotometrics','catsh_SubhaloVel','catsh_SubhaloVmax','catsh_id','config','info','scalar_m_neutral_H','scalar_star_age_disk','scalar_star_age_light_wgtd','scalar_star_age_spheroid','sfh_exsitu_nstars','sfh_exsitu_nstars_tot','sfh_exsitu_sfr','sfh_exsitu_sfz',  'sfh_insitu_nstars',  'sfh_insitu_nstars_tot','sfh_insitu_sfr','sfh_insitu_sfz',  'tree_sh_idx']
