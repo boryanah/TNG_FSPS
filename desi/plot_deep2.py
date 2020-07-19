@@ -4,6 +4,8 @@ from util import load_fsps
 from astropy.io import fits
 from util import get_scatter, make_scatter_histogram, nMgy_to_mag
 import sys
+import plotparams
+plotparams.buba()
 
 # fsps parameters
 tng = 'tng300'#'tng300'
@@ -21,6 +23,8 @@ if want_photo_scatter:
 else:
     photo_scatter = '_noscatter'
 
+z_dic = {'_55': 0.8, '_47': 1.1, '_41': 1.4}
+    
 # deep2/decals parameters
 nomask = ''#'-NoMask'#''
 dr_v = '8'#'8'#'5'
@@ -150,4 +154,4 @@ y_dec_sp = y_dec_sp[color_selection_sp]
 # testing the rotation
 theta = None
 figname = "figs/deep2_dr"+dr_v+snap_dir+".png"
-make_scatter_histogram(x_dec_sp,y_dec_sp,x_dec,y_dec,figname=figname,theta=theta)
+make_scatter_histogram(x_dec_sp,y_dec_sp,x_dec,y_dec,figname=figname,redshift=z_dic[snap_dir],theta=theta)

@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.special import erf, erfc
 from scipy.optimize import curve_fit,minimize
 import sys
+import plotparams
+plotparams.buba()
 
 want_fit = 0; want_env = 0; show_only_total = 1
 #want_fit = 0; want_env = 1; show_only_total = 1
@@ -13,6 +15,7 @@ selection = '_'+sys.argv[1]
 #selection = '_DESI'
 snap_dirs = ['_55','_47','_41']
 
+z_dic = {'_55': 0.8, '_47': 1.1, '_41': 1.4}
 
 bin_cen = np.load("data/bin_cen.npy")
 if want_env:
@@ -22,7 +25,7 @@ else:
     env_types = ['']
     lss =  ['-','--',':']
     
-plt.figure(1)
+plt.figure(1,figsize=(9,7))
 
 for i in range(len(snap_dirs)):
     snap_dir = snap_dirs[i]
@@ -45,15 +48,15 @@ for i in range(len(snap_dirs)):
         plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='dodgerblue',ls='-',label='color-selected')
         #plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='lawngreen',ls='-',label='OII-emitting')
         if show_only_total:
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label='z=0.8')
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label='z=1.1')
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls=':',label='z=1.4')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label=r'$z=0.8$')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label=r'$z=1.1$')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls=':',label=r'$z=1.4$')
         else:
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.5,color='k',ls='-',label='centrals')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=1.5,color='k',ls='-',label='satellites')
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label='z=0.8')
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label='z=1.1')
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls=':',label='z=1.4')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label=r'$z=0.8$')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label=r'$z=1.1$')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls=':',label=r'$z=1.4$')
 
     if show_only_total:
         plt.plot(10**bin_cen,hist_cents_sfg+hist_sats_sfg,lw=2.,color='orange',ls=ls)
@@ -77,14 +80,14 @@ if want_fit:
     plt.plot(10**bincen_sfg,cents_sfg,lw=1.5,color='darkorange',ls='-.')
     plt.plot(10**binsat_sfg,sats_sfg,lw=0.5,color='darkorange',ls='-.')
     
-plt.legend(loc='upper left',ncol=2,fontsize=fs-2)
+plt.legend(loc='upper left',ncol=2)#,fontsize=fs-2)
 plt.ylim([0.001,10])
 plt.xlim([1.e11,1.e15])#2.e14])
-plt.ylabel(r"$\langle N_g \rangle$",fontsize=fs)
-plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$",fontsize=fs)
+plt.ylabel(r"$\langle N_g \rangle$")#,fontsize=fs)
+plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$")#,fontsize=fs)
 plt.xscale('log')
 plt.yscale('log')
-plt.text(2.4e14,6,''.join(selection.split('_')),fontsize=fs)
+plt.text(2.e11,0.2,r'${\rm '+(''.join(selection.split('_')))+"}$")#,fontsize=fs)
 if want_env:
     plt.savefig("figs/HOD_elg_env"+selection+".png")
 else:

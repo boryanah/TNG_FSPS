@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.special import erf, erfc
 from scipy.optimize import curve_fit,minimize
 import sys
+import plotparams
+plotparams.buba()
 
 mode = sys.argv[3]
 if mode == 'normal':
@@ -15,6 +17,8 @@ fs = 14
 #selection = '_DESI'
 selection = '_'+sys.argv[1]
 snap_dir = '_%d'%(int(sys.argv[2]))
+
+z_dic = {'_55': 0.8, '_47': 1.1, '_41': 1.4}
 
 def mean_Ncen(mhalo, mmin, sigma):
     return 0.5 * ( 1.0 + erf( (mhalo-mmin) / sigma ) )
@@ -59,7 +63,7 @@ else:
     env_types = ['']
     lss =  ['-']
 
-plt.figure(1)
+plt.figure(1,figsize=(9,7))
 
 for i in range(len(env_types)):
     env_type = env_types[i]
@@ -108,14 +112,14 @@ if want_fit:
     plt.plot(10**bincen_sfg,cents_sfg,lw=1.5,color='darkorange',ls='-.')
     plt.plot(10**binsat_sfg,sats_sfg,lw=0.5,color='darkorange',ls='-.')
     
-plt.legend(loc='upper left',ncol=2,fontsize=fs-2)
+plt.legend(loc='upper left',ncol=2)#,fontsize=fs-2)
 plt.ylim([0.001,10])
 plt.xlim([1.e11,1.e15])#2.e14])
-plt.ylabel(r"$\langle N_g \rangle$",fontsize=fs)
-plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$",fontsize=fs)
+plt.ylabel(r"$\langle N_g \rangle$")#,fontsize=fs)
+plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$")#,fontsize=fs)
 plt.xscale('log')
 plt.yscale('log')
-plt.text(2.4e14,6,''.join(selection.split('_')),fontsize=fs)
+plt.text(2.e11,0.2,r'${\rm '+(''.join(selection.split('_')))+",} \ z = %.1f$"%z_dic[snap_dir])#,fontsize=fs)
 if want_env:
     plt.savefig("figs/HOD_elg_env"+snap_dir+selection+".png")
 else:

@@ -53,7 +53,7 @@ def load_fsps(snap,dust_index,tng='tng300',cam_filt='sdss_des'):
 
     return sub_id, ugriz_grizy, stellar_mass, flux_oii
 
-def make_scatter_histogram(x,y,z,w,figname,s=0.1,al=0.2,theta=None):
+def make_scatter_histogram(x,y,z,w,figname,redshift,s=0.1,al=0.2,theta=None):
 
     if theta is not None:
         rot_str = r' $['+str(theta)+'^\circ'+']$ rotated'
@@ -70,7 +70,7 @@ def make_scatter_histogram(x,y,z,w,figname,s=0.1,al=0.2,theta=None):
         rot_str = ''
     
     # definitions for the axes
-    left, width = 0.1, 0.65
+    left, width = 0.13, 0.65
     bottom, height = 0.1, 0.65
     spacing = 0.005
 
@@ -80,7 +80,7 @@ def make_scatter_histogram(x,y,z,w,figname,s=0.1,al=0.2,theta=None):
     rect_histy = [left + width + spacing, bottom, 0.2, height]
 
     # start with a rectangular Figure
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(9, 9))
 
     ax_scatter = plt.axes(rect_scatter)
     ax_scatter.tick_params(direction='in', top=True, right=True)
@@ -92,8 +92,8 @@ def make_scatter_histogram(x,y,z,w,figname,s=0.1,al=0.2,theta=None):
     # the scatter plot:
     ax_scatter.scatter(x, y,s=s,color='dodgerblue',alpha=al,label='TNG-FSPS')
     ax_scatter.scatter(z, w,s=s,color='red',label='DEEP2-DR8')
-    ax_scatter.set_xlabel("r-z"+rot_str)
-    ax_scatter.set_ylabel("g-r"+rot_str)
+    ax_scatter.set_xlabel(r"$r-z$"+rot_str)
+    ax_scatter.set_ylabel(r"$g-r$"+rot_str)
     mean_z = np.mean(z[np.logical_not(np.isnan(z) | np.isinf(z))])
     mean_w = np.mean(w[np.logical_not(np.isnan(w) | np.isinf(w))])
     
@@ -103,9 +103,10 @@ def make_scatter_histogram(x,y,z,w,figname,s=0.1,al=0.2,theta=None):
     # now determine nice limits by hand:
     binwidth = 0.05
     lim = np.ceil(np.abs([x, y]).max() / binwidth) * binwidth
-    lim = 2.5
+    lim = 2.4
     ax_scatter.set_xlim((-0.5, lim))
     ax_scatter.set_ylim((-0.5, lim))
+    ax_scatter.text(1.6,-0.4,r"$z = %.1f$"%redshift)
     ax_scatter.legend()
     
     bins = np.arange(-lim, lim + binwidth, binwidth)
