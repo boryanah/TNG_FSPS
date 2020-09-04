@@ -8,7 +8,7 @@ plotparams.buba()
 selection = '_'+sys.argv[1]
 #selection = '_eBOSS'
 
-mode = r"sSFR-colored"
+mode = sys.argv[3]#r"sSFR-colored"
 mode_str = "_"+mode.split('-')[0]
 
 redshift_dict = {'055':['sdss_desi','_0.0'],#-0.5
@@ -35,25 +35,25 @@ log_SFR_eligible = np.log10(sub_SFR_eligible)
 log_sSFR_eligible[sub_SFR_eligible == 0.] = -13.
 log_SFR_eligible[sub_SFR_eligible == 0.] = -3.
 
-#x_line = np.linspace(np.min(x_dec_eligible),np.max(x_dec_eligible),100)
-#y_line = np.linspace(np.min(y_dec_eligible),np.max(y_dec_eligible),100)
-x_line = np.linspace(-0.5,2.4,10)
-y_line = np.linspace(-0.5,2.4,10)
+x_line3 = np.linspace(0.7,1.7,10)
+x_line4 = np.linspace(0.2,0.8,10)#(-0.5,2.4,10) everyone was using this
+y_line3 = np.linspace(-0.5,0.3,10)
+y_line4 = np.linspace(-0.5,-0.2,10)
 
 
 if selection == '_DESI':
-    y_line1 = -1.2*x_line+1.6
-    y_line2 = 1.15*x_line-0.15
-    x_line1 = 0.3*np.ones(len(x_line))
-    x_line2 = 1.6*np.ones(len(x_line))
+    y_line1 = -1.2*x_line3+1.6
+    y_line2 = 1.15*x_line4-0.15
+    x_line1 = 0.3*np.ones(len(y_line3))
+    x_line2 = 1.6*np.ones(len(y_line4))
 elif selection == '_eBOSS':
-    y_line1 = -0.068*x_line+0.457
-    y_line2 = 0.112*x_line+0.773
-    x_line1 = 0.218*y_line+0.571 #NGC 0.637*y_line+0.399
-    x_line2 = -0.555*y_line+1.901
+    y_line1 = -0.068*x_line3+0.457
+    y_line2 = 0.112*x_line4+0.773
+    x_line1 = 0.218*y_line3+0.571 #NGC 0.637*y_line+0.399
+    x_line2 = -0.555*y_line4+1.901
 
 
-plt.figure(1,figsize=(9,9))
+plt.figure(1,figsize=(9,7))
 '''
 y_line1 = -1.2*x_line+1.6
 y_line2 = 1.15*x_line-0.15
@@ -75,17 +75,17 @@ plt.plot(x_line,y_line2,'dodgerblue')
 plt.plot(x_line1,y_line,'dodgerblue')
 plt.plot(x_line2,y_line,'dodgerblue')
 '''
-plt.plot(x_line,y_line1,'dodgerblue')
-plt.plot(x_line,y_line2,'dodgerblue')
-plt.plot(x_line1,y_line,'dodgerblue')
-plt.plot(x_line2,y_line,'dodgerblue')
+plt.plot(x_line3,y_line1,'dodgerblue')
+plt.plot(x_line4,y_line2,'dodgerblue')
+plt.plot(x_line1,y_line3,'dodgerblue')
+plt.plot(x_line2,y_line4,'dodgerblue')
 
 #plt.scatter(x_dec_eligible,y_dec_eligible,s=0.05,label="color-selected")
 #plt.hexbin(x_dec_eligible, y_dec_eligible, C=np.abs(sub_SFR_eligible/np.mean(sub_SFR_eligible)), gridsize=50, bins='log', cmap='Greys')
-if mode == "SFR-colored":
+if mode == "SFR":
     #plt.hexbin(x_dec_eligible, y_dec_eligible, C=(sub_SFR_eligible/np.mean(sub_SFR_eligible)), gridsize=50, bins='log', cmap='Greys')#'inferno')#'Greys')
     plt.hexbin(x_dec_eligible, y_dec_eligible, C=(sub_SFR_eligible), gridsize=50, bins='log', cmap='Greys')
-elif mode == "sSFR-colored":
+elif mode == "sSFR":
     plt.hexbin(x_dec_eligible, y_dec_eligible, C=(sub_sSFR_eligible/np.mean(sub_sSFR_eligible)), gridsize=50, bins='log', cmap='Greys')
 
 plt.xlim((-0.5, 2.4))
@@ -94,6 +94,8 @@ plt.text(.4,2.,r'${\rm '+(''.join(selection.split('_')))+",} \ z = %.1f"%z_dic[s
 #plt.text(.6,2.,r"$z = %.1f"%z_dic[snap_dir]+r", \ {\rm "+mode+"}$")#,fontsize=fs)
 plt.xlabel(r"$r-z$")#,fontsize=fs)
 plt.ylabel(r"$g-r$")#,fontsize=fs)
+plt.gca().tick_params(axis='both', which='major', labelsize=24)
 #plt.legend()
 plt.savefig("figs/selection"+snap_dir+selection+mode_str+".png")
+plt.show()
 plt.close()

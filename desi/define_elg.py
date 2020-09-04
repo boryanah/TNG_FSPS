@@ -16,9 +16,9 @@ redshift_dict = {'055':['sdss_desi','_0.0'],#-0.5
                  '041':['sdss_des','']}
 
 # user specified choices
-want_corrfunc = 1 # saves corr function values
+want_corrfunc = 0#1 # saves corr function values
 want_selection = 0 # saves plots with grz selections 
-want_hod = 1 # saves HOD histogram
+want_hod = 0#1 # saves HOD histogram
 want_env = int(sys.argv[3]) # record for the high and low percentiles only
 if want_env:
     env_type = sys.argv[4]#'_high'#'_low'
@@ -75,6 +75,8 @@ sub_id = sub_id[selection_dec]
 flux_oii = flux_oii[selection_dec]
 print("# physical galaxies = ",len(flux_oii))
 
+
+
 # rz and gr colors
 x_dec = r_dec-z_dec
 y_dec = g_dec-r_dec
@@ -100,6 +102,7 @@ if selection == '_eBOSS':
 elif selection == '_DESI':
     # survey limit
     survey_selection = (g_dec < g_lim) & (r_dec < r_lim) & (z_dec < z_lim)
+    print("applying mag limits = ",np.sum(survey_selection))
     
     # DESI/ELG
     # star formation rate vs color color coding
@@ -200,7 +203,8 @@ sub_id_flux = sub_id[flux_selection]
 print("# flux-selected galaxies = ",len(flux_selection))
 
 # Selection for the most massive galaxies
-sub_id_all = (np.argsort(sub_star_mass)[::-1])[:n_top]
+sub_id_all = sub_ids[(np.argsort(sub_star_mass)[::-1])[:n_top]]#[:12000]]#[:n_top]
+np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_all.npy",sub_id_all)
 
 if want_env:
     filename = '/home/boryanah/lars/LSSIllustrisTNG/CosmicWeb/WEB_CIC_256_DM_TNG'+box_name[-3:]+'-2.hdf5'
@@ -433,6 +437,11 @@ def get_hist(count_halo_elg_fp,count_halo_cents_elg_fp,count_halo_sats_elg_fp):
     hist_sats_elg = hist_sats/N_bin
     return edges,hist_elg,hist_cents_elg,hist_sats_elg
 
+np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_col.npy",sub_id_col)
+np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_sfg.npy",sub_id_sfg)
+np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_flux.npy",sub_id_flux)
+print("remove me")
+quit()
 if want_hod:
     # get parent indices of the centrals and their subhalo indices in the original array
     unique_sub_grnr, firsts = np.unique(SubhaloGrNr_fp,return_index=True)

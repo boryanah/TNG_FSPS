@@ -44,19 +44,22 @@ for i in range(len(snap_dirs)):
         plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label="high environment")
         plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label="low environment")
     if i == 0:
-        plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='orange',ls='-',label='star-forming')
-        plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='dodgerblue',ls='-',label='color-selected')
+
         #plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='lawngreen',ls='-',label='OII-emitting')
         if show_only_total:
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label=r'$z=0.8$')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label=r'$z=1.1$')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls=':',label=r'$z=1.4$')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='orange',ls='-',label='star-forming')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='dodgerblue',ls='-',label='color-selected')
         else:
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.5,color='k',ls='-',label='centrals')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=1.5,color='k',ls='-',label='satellites')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label=r'$z=0.8$')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label=r'$z=1.1$')
             plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls=':',label=r'$z=1.4$')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='orange',ls='-',label='star-forming')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='dodgerblue',ls='-',label='color-selected')
 
     if show_only_total:
         plt.plot(10**bin_cen,hist_cents_sfg+hist_sats_sfg,lw=2.,color='orange',ls=ls)
@@ -81,7 +84,7 @@ if want_fit:
     plt.plot(10**binsat_sfg,sats_sfg,lw=0.5,color='darkorange',ls='-.')
     
 plt.legend(loc='upper left',ncol=2)#,fontsize=fs-2)
-plt.ylim([0.001,10])
+plt.ylim([0.001,40])
 plt.xlim([1.e11,1.e15])#2.e14])
 plt.ylabel(r"$\langle N_g \rangle$")#,fontsize=fs)
 plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$")#,fontsize=fs)

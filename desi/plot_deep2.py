@@ -89,69 +89,69 @@ print("# objects over logM = 10: ",np.sum(log_mass_star > 10.))
 
 if want_photo_scatter:
     fac = 1.
-    g_dec_sp = get_scatter(ugriz_grizy[:,5],g_lim,factor=fac)
-    r_dec_sp = get_scatter(ugriz_grizy[:,6],r_lim,factor=fac)
-    z_dec_sp = get_scatter(ugriz_grizy[:,8],z_lim,factor=fac)
+    g_dec_fsps = get_scatter(ugriz_grizy[:,5],g_lim,factor=fac)
+    r_dec_fsps = get_scatter(ugriz_grizy[:,6],r_lim,factor=fac)
+    z_dec_fsps = get_scatter(ugriz_grizy[:,8],z_lim,factor=fac)
 else:
-    g_dec_sp = ugriz_grizy[:,5]
-    r_dec_sp = ugriz_grizy[:,6]
-    z_dec_sp = ugriz_grizy[:,8]
+    g_dec_fsps = ugriz_grizy[:,5]
+    r_dec_fsps = ugriz_grizy[:,6]
+    z_dec_fsps = ugriz_grizy[:,8]
 
 
 # selection of physical objects
-selection_dec_sp = (g_dec_sp < 100000.)
-g_dec_sp = g_dec_sp[selection_dec_sp]
-r_dec_sp = r_dec_sp[selection_dec_sp]
-z_dec_sp = z_dec_sp[selection_dec_sp]
-log_mass_star = log_mass_star[selection_dec_sp]
+selection_dec_fsps = (g_dec_fsps < 100000.)
+g_dec_fsps = g_dec_fsps[selection_dec_fsps]
+r_dec_fsps = r_dec_fsps[selection_dec_fsps]
+z_dec_fsps = z_dec_fsps[selection_dec_fsps]
+log_mass_star = log_mass_star[selection_dec_fsps]
 
-def get_col_hist(grz_dec,grz_dec_sp):
-    grz_min = np.min(np.hstack((grz_dec,grz_dec_sp)))
-    grz_max = np.max(np.hstack((grz_dec,grz_dec_sp)))
+def get_col_hist(grz_dec,grz_dec_fsps):
+    grz_min = np.min(np.hstack((grz_dec,grz_dec_fsps)))
+    grz_max = np.max(np.hstack((grz_dec,grz_dec_fsps)))
     grz_bins = np.linspace(grz_min,grz_max,n_bins)
     grz_cents = .5*(grz_bins[1:]+grz_bins[:-1])
 
     hist_grz, edges = np.histogram(grz_dec,bins=grz_bins,density=True)
-    hist_grz_sp, edges = np.histogram(grz_dec_sp,bins=grz_bins,density=True)
-    return grz_cents, hist_grz, hist_grz_sp
+    hist_grz_fsps, edges = np.histogram(grz_dec_fsps,bins=grz_bins,density=True)
+    return grz_cents, hist_grz, hist_grz_fsps
 
 if want_hist:
     n_bins = 41
-    g_cents, hist_g, hist_g_sp = get_col_hist(g_dec,g_dec_sp)
-    r_cents, hist_r, hist_r_sp = get_col_hist(r_dec,r_dec_sp)
-    z_cents, hist_z, hist_z_sp = get_col_hist(z_dec,z_dec_sp)
+    g_cents, hist_g, hist_g_fsps = get_col_hist(g_dec,g_dec_fsps)
+    r_cents, hist_r, hist_r_fsps = get_col_hist(r_dec,r_dec_fsps)
+    z_cents, hist_z, hist_z_fsps = get_col_hist(z_dec,z_dec_fsps)
 
     plt.subplots(1,3,figsize=(5.4*3,1*5.))
 
     plt.subplot(1,3,1)
     plt.plot(g_cents,hist_g,label='DEEP2-DR8')
-    plt.plot(g_cents,hist_g_sp,label="TNG-FSPS")
+    plt.plot(g_cents,hist_g_fsps,label="TNG-FSPS")
     plt.legend()
     plt.xlabel("g")
 
     plt.subplot(1,3,2)
     plt.plot(r_cents,hist_r,label='DEEP2-DR8')
-    plt.plot(r_cents,hist_r_sp,label="TNG-FSPS")
+    plt.plot(r_cents,hist_r_fsps,label="TNG-FSPS")
     plt.legend()
     plt.xlabel("r")
 
     plt.subplot(1,3,3)
     plt.plot(z_cents,hist_z,label='DEEP2-DR8')
-    plt.plot(z_cents,hist_z_sp,label="TNG-FSPS")
+    plt.plot(z_cents,hist_z_fsps,label="TNG-FSPS")
     plt.legend()
     plt.xlabel("z")
 
     plt.savefig("figs/hist_grz.png")
 
-print("# total galaxies = ",np.sum(selection_dec_sp))
+print("# total galaxies = ",np.sum(selection_dec_fsps))
 
-x_dec_sp = r_dec_sp-z_dec_sp
-y_dec_sp = g_dec_sp-r_dec_sp
-color_selection_sp = (r_dec_sp < r_lim) & (g_dec_sp < g_lim) & (z_dec_sp < z_lim)
-x_dec_sp = x_dec_sp[color_selection_sp]
-y_dec_sp = y_dec_sp[color_selection_sp]
+x_dec_fsps = r_dec_fsps-z_dec_fsps
+y_dec_fsps = g_dec_fsps-r_dec_fsps
+color_selection_fsps = (r_dec_fsps < r_lim) & (g_dec_fsps < g_lim) & (z_dec_fsps < z_lim)
+x_dec_fsps = x_dec_fsps[color_selection_fsps]
+y_dec_fsps = y_dec_fsps[color_selection_fsps]
 
 # testing the rotation
 theta = None
 figname = "figs/deep2_dr"+dr_v+snap_dir+".png"
-make_scatter_histogram(x_dec_sp,y_dec_sp,x_dec,y_dec,figname=figname,redshift=z_dic[snap_dir],theta=theta)
+make_scatter_histogram(x_dec_fsps,y_dec_fsps,x_dec,y_dec,figname=figname,redshift=z_dic[snap_dir],theta=theta)
