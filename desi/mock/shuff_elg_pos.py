@@ -13,7 +13,7 @@ plotparams.buba()
 np.random.seed(2)
 #np.random.seed(3000000)
 
-def plot_ratio(xyz_true,w_true,xyz_hod,w_hod,Lbox,color,label,offset=1.):
+def plot_ratio(xyz_true,w_true,xyz_hod,w_hod,Lbox,color,label,offset=1.,rmin=2.):
     Rat_hodtrue_mean, Rat_hodtrue_err, Corr_mean_hod, Corr_err_hod,  Corr_mean_true, Corr_err_true, bin_centers = get_jack_corr(xyz_true,w_true,xyz_hod,w_hod,Lbox)
 
     if color == 'black':
@@ -22,11 +22,13 @@ def plot_ratio(xyz_true,w_true,xyz_hod,w_hod,Lbox,color,label,offset=1.):
     else:
         plt.errorbar(bin_centers*offset,Rat_hodtrue_mean,yerr=Rat_hodtrue_err,color=color,ls='-',label=label,alpha=1.,fmt='o',capsize=4)
 
-    mean_val = np.mean(Rat_hodtrue_mean[np.isfinite(Rat_hodtrue_mean) & (bin_centers > 2.)])
+    mean_val = np.mean(Rat_hodtrue_mean[np.isfinite(Rat_hodtrue_mean) & (bin_centers > rmin)])
 
     print('mean_val = ',mean_val)
-    x = np.linspace(2,10,3)
-    plt.plot(bin_centers,np.ones(len(bin_centers)),'k--')
+    x = np.linspace(rmin,10,3)
+    line = np.linspace(0.,20,3)
+    plt.plot(line,np.ones(len(line)),'k--')
+    plt.xlim([0.095,12])
     plt.plot(x,np.ones(len(x))*mean_val,color=color,ls='--',lw=1.5)
 
 
@@ -272,14 +274,15 @@ w_all_hod = np.load("data_shuff/w_all_hod.npy")
 
 plt.figure(figsize=(8,6))
 
-plot_ratio(xyz_col_true,w_col_true,xyz_col_hod,w_col_hod,Lbox=Lbox,color='dodgerblue',label='color-selected')
-plot_ratio(xyz_sfg_true,w_sfg_true,xyz_sfg_hod,w_sfg_hod,Lbox=Lbox,offset=1.05,color='orange',label='SFR-selected')
-plot_ratio(xyz_all_true,w_all_true,xyz_all_hod,w_all_hod,Lbox=Lbox,color='black',label='mass-selected')
+plot_ratio(xyz_col_true,w_col_true,xyz_col_hod,w_col_hod,Lbox=Lbox,color='dodgerblue',label='color-selected',rmin=.8)
+plot_ratio(xyz_sfg_true,w_sfg_true,xyz_sfg_hod,w_sfg_hod,Lbox=Lbox,offset=1.05,color='#CC6677',label='SFR-selected',rmin=.8)
+plot_ratio(xyz_all_true,w_all_true,xyz_all_hod,w_all_hod,Lbox=Lbox,color='black',label='mass-selected',rmin=2.)
 
 plt.xlabel(r'$r [{\rm Mpc}/h]$')
 plt.ylabel(r'$\xi(r)_{\rm HOD}/\xi(r)_{\rm TNG300}$')
 plt.xscale('log')
 plt.legend()
 plt.ylim([0.6,1.4])
-plt.savefig("figs/shuff_ELG.png")
+#plt.savefig("figs/shuff_ELG.png")
+plt.savefig("../paper/shuff_ELG.pdf")
 plt.show()

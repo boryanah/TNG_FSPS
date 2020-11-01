@@ -18,7 +18,7 @@ redshift_dict = {'055':['sdss_desi','_0.0'],#-0.5
 # user specified choices
 want_corrfunc = 0#1 # saves corr function values
 want_selection = 0 # saves plots with grz selections 
-want_hod = 0#1 # saves HOD histogram
+want_hod = 1 # saves HOD histogram
 want_env = int(sys.argv[3]) # record for the high and low percentiles only
 if want_env:
     env_type = sys.argv[4]#'_high'#'_low'
@@ -83,6 +83,7 @@ y_dec = g_dec-r_dec
 q_dec = g_dec
 
 if selection == '_eBOSS':
+    
     # survey limit
     survey_selection = (g_dec < g_lim) & (r_dec < r_lim) & (z_dec < z_lim)
     
@@ -100,6 +101,7 @@ if selection == '_eBOSS':
     col_selection &= survey_selection
     
 elif selection == '_DESI':
+    
     # survey limit
     survey_selection = (g_dec < g_lim) & (r_dec < r_lim) & (z_dec < z_lim)
     print("applying mag limits = ",np.sum(survey_selection))
@@ -150,8 +152,9 @@ SubhaloGrNr_fp = np.load(root+'SubhaloGrNr_fp'+snap_dir+'.npy')
 SubhaloPos_fp = np.load(root+'SubhaloPos_fp'+snap_dir+'.npy')/1.e3
 
 # load the info about the star formation rate
-fname = '../data/galaxies_SFH_tng'+box_name[-3:]+'_'+snap+".hdf5"
-f = h5py.File(fname, 'r')
+fdir = '/mnt/store1/boryanah/IllustrisTNG/CosmicWeb'
+filename = 'WEB_CIC_256_DM_TNG300-2.hdf5'
+f = h5py.File(fdir+filename, 'r')
 sub_SFR = f['catsh_SubhaloSFR'][:]
 sub_star_mass = f['catsh_SubhaloMassType'][:,4]
 sub_ids = f['catsh_id'][:]
@@ -435,13 +438,12 @@ def get_hist(count_halo_elg_fp,count_halo_cents_elg_fp,count_halo_sats_elg_fp):
     hist_elg = hist/N_bin
     hist_cents_elg = hist_cents/N_bin
     hist_sats_elg = hist_sats/N_bin
-    return edges,hist_elg,hist_cents_elg,hist_sats_elg
+    return edges,hist,hist_cents_elg,hist_sats_elg
 
 np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_col.npy",sub_id_col)
 np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_sfg.npy",sub_id_sfg)
 np.save("mock/data/sub_id"+env_type+snap_dir+selection+"_flux.npy",sub_id_flux)
-print("remove me")
-quit()
+
 if want_hod:
     # get parent indices of the centrals and their subhalo indices in the original array
     unique_sub_grnr, firsts = np.unique(SubhaloGrNr_fp,return_index=True)
@@ -459,11 +461,11 @@ if want_hod:
     N_bin, edges = np.histogram(Group_M_Mean200_fp,bins=10**bin_edges)
 
     # color-selected galaxies
-    edges,hist_col,hist_cents_col,hist_sats_col = get_hist(count_halo_col_fp,count_halo_cents_col_fp,count_halo_sats_col_fp)
+    edges,hist_unnorm_col,hist_cents_col,hist_sats_col = get_hist(count_halo_col_fp,count_halo_cents_col_fp,count_halo_sats_col_fp)
     # SFGs
-    edges,hist_sfg,hist_cents_sfg,hist_sats_sfg = get_hist(count_halo_sfg_fp,count_halo_cents_sfg_fp,count_halo_sats_sfg_fp)
+    edges,hist_unnorm_sfg,hist_cents_sfg,hist_sats_sfg = get_hist(count_halo_sfg_fp,count_halo_cents_sfg_fp,count_halo_sats_sfg_fp)
     # OII emitters
-    edges,hist_flux,hist_cents_flux,hist_sats_flux = get_hist(count_halo_flux_fp,count_halo_cents_flux_fp,count_halo_sats_flux_fp)
+    edges,hist_unnorm_flux,hist_cents_flux,hist_sats_flux = get_hist(count_halo_flux_fp,count_halo_cents_flux_fp,count_halo_sats_flux_fp)
 
 
     bin_cen = .5*(bin_edges[1:]+bin_edges[:-1])
@@ -474,3 +476,7 @@ if want_hod:
     np.save("data/hist_sats"+env_type+snap_dir+selection+"_sfg.npy",hist_sats_sfg)
     np.save("data/hist_cents"+env_type+snap_dir+selection+"_flux.npy",hist_cents_flux)
     np.save("data/hist_sats"+env_type+snap_dir+selection+"_flux.npy",hist_sats_flux)
+
+    np.save("data/hist_unnorm"+env_type+snap_dir+selection+"_col.npy",hist_unnorm_col)
+    np.save("data/hist_unnorm"+env_type+snap_dir+selection+"_sfg.npy",hist_unnorm_sfg)
+    np.save("data/hist_unnorm"+env_type+snap_dir+selection+"_flux.npy",hist_unnorm_flux)

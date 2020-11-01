@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 np.random.seed(300)
 
+    
 def get_scatter(band_mag,mag_limit,factor=1.,snr=5.):
     flux_limit = mag_to_nMgy(mag_limit)
     error = flux_limit/snr
@@ -53,7 +54,7 @@ def load_fsps(snap,dust_index,tng='tng300',cam_filt='sdss_des'):
 
     return sub_id, ugriz_grizy, stellar_mass, flux_oii
 
-def make_scatter_histogram(x,y,z,w,figname,redshift,s=0.1,al=0.2,theta=None):
+def make_scatter_histogram(x,y,z,w,figname,redshift,s=0.4,al=0.2,theta=None):
 
     if theta is not None:
         rot_str = r' $['+str(theta)+'^\circ'+']$ rotated'
@@ -80,25 +81,49 @@ def make_scatter_histogram(x,y,z,w,figname,redshift,s=0.1,al=0.2,theta=None):
     rect_histy = [left + width + spacing, bottom, 0.2, height]
 
     # start with a rectangular Figure
-    plt.figure(figsize=(9, 9))
-
+    plt.figure(figsize=(8., 8.))
+    print('me')
     ax_scatter = plt.axes(rect_scatter)
     ax_scatter.tick_params(direction='in', top=True, right=True)
     ax_histx = plt.axes(rect_histx)
     ax_histx.tick_params(direction='in', labelbottom=False)
     ax_histy = plt.axes(rect_histy)
     ax_histy.tick_params(direction='in', labelleft=False)
-
+    
     # the scatter plot:
-    ax_scatter.scatter(x, y,s=s,color='dodgerblue',alpha=al,label='TNG-FSPS')
-    ax_scatter.scatter(z, w,s=s,color='red',label='DEEP2-DR8')
-    ax_scatter.set_xlabel(r"$r-z$"+rot_str)
-    ax_scatter.set_ylabel(r"$g-r$"+rot_str)
+    ax_scatter.scatter([], [],s=10,color='dodgerblue',alpha=1.,label='TNG300')
+    ax_scatter.scatter([], [],s=10,color='red',alpha=1.,label='DEEP2-DECALS')
+    ax_scatter.scatter(x, y,s=s,color='dodgerblue',alpha=al)#,label='TNG-FSPS')
+    ax_scatter.scatter(z, w,s=s,color='red')#,label='DEEP2-DR8')
+    ax_scatter.set_xlabel(r"$r-z$"+rot_str,fontsize=22)
+    ax_scatter.set_ylabel(r"$g-r$"+rot_str,fontsize=22)
     mean_z = np.mean(z[np.logical_not(np.isnan(z) | np.isinf(z))])
     mean_w = np.mean(w[np.logical_not(np.isnan(w) | np.isinf(w))])
     
-    ax_scatter.scatter(np.mean(x), np.mean(y),s=100,color='blue',marker='x',label='avg TNG-FSPS')
-    ax_scatter.scatter(mean_z, mean_w,s=100,color='darkorange',marker='x',label='avg DEEP2-DR8')
+    ax_scatter.scatter(np.mean(x), np.mean(y),s=100,color='blue',marker='x')#,label='avg TNG-FSPS')
+    ax_scatter.scatter(mean_z, mean_w,s=100,color='orangered',marker='x')#,label='avg DEEP2-DR8')
+
+    # call code for producing the DESI color cuts
+    x_line3 = np.linspace(0.7,1.7,10)
+    x_line4 = np.linspace(0.2,0.8,10)#(-0.5,2.4,10) everyone was using this
+    y_line3 = np.linspace(-0.5,0.3,10)
+    y_line4 = np.linspace(-0.5,-0.2,10)
+
+    y_line1 = -1.2*x_line3+1.6
+    y_line2 = 1.15*x_line4-0.15
+    x_line1 = 0.3*np.ones(len(y_line3))
+    x_line2 = 1.6*np.ones(len(y_line4))
+
+    ax_scatter.plot(x_line3,y_line1,lw=4.5,color='white')
+    ax_scatter.plot(x_line4,y_line2,lw=4.5,color='white')
+    ax_scatter.plot(x_line1,y_line3,lw=4.5,color='white')
+    ax_scatter.plot(x_line2,y_line4,lw=4.5,color='white')
+    ax_scatter.plot(x_line3,y_line1,lw=1.5,color='black')
+    ax_scatter.plot(x_line4,y_line2,lw=1.5,color='black')
+    ax_scatter.plot(x_line1,y_line3,lw=1.5,color='black')
+    ax_scatter.plot(x_line2,y_line4,lw=1.5,color='black')
+
+
     
     # now determine nice limits by hand:
     binwidth = 0.05
@@ -106,19 +131,20 @@ def make_scatter_histogram(x,y,z,w,figname,redshift,s=0.1,al=0.2,theta=None):
     lim = 2.4
     ax_scatter.set_xlim((-0.5, lim))
     ax_scatter.set_ylim((-0.5, lim))
-    ax_scatter.text(1.6,-0.4,r"$z = %.1f$"%redshift)
+    ax_scatter.text(1.7,-0.4,r"$z = %.1f$"%redshift)
     ax_scatter.legend()
     
     bins = np.arange(-lim, lim + binwidth, binwidth)
-    ax_histx.hist(x,bins=bins,histtype='step',color='b',density=True)
-    ax_histy.hist(y,bins=bins,histtype='step',color='b',density=True,orientation='horizontal')
-    ax_histx.hist(z,bins=bins,histtype='step',color='r',density=True)
-    ax_histy.hist(w,bins=bins,histtype='step',color='r',density=True,orientation='horizontal')
+    ax_histx.hist(x,bins=bins,histtype='step',color='b',lw=3.,density=True)
+    ax_histy.hist(y,bins=bins,histtype='step',color='b',lw=3.,density=True,orientation='horizontal')
+    ax_histx.hist(z,bins=bins,histtype='step',color='r',lw=3.,density=True)
+    ax_histy.hist(w,bins=bins,histtype='step',color='r',lw=3.,density=True,orientation='horizontal')
 
     ax_histx.set_xlim(ax_scatter.get_xlim())
     ax_histy.set_ylim(ax_scatter.get_ylim())
 
     plt.savefig(figname)
+    plt.show()
     plt.close()
     return
 

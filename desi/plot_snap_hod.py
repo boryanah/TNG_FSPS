@@ -12,11 +12,15 @@ if mode == 'normal':
 elif mode == 'env':
     want_fit = 0; want_env = 1; show_only_total = 1
 
-fs = 14
+fs = 28
 #selection = '_eBOSS'
 #selection = '_DESI'
 selection = '_'+sys.argv[1]
 snap_dir = '_%d'%(int(sys.argv[2]))
+
+lw_cent = 4.
+lw_sat = 2.
+
 
 z_dic = {'_55': 0.8, '_47': 1.1, '_41': 1.4}
 
@@ -81,50 +85,53 @@ for i in range(len(env_types)):
         plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label="high environment")
         plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='--',label="low environment")
     if i == 0:
-        plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='orange',ls='-',label='star-forming')
+        plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='#CC6677',ls='-',label='SFR-selected')
         plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='dodgerblue',ls='-',label='color-selected')
         #plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='lawngreen',ls='-',label='OII-emitting')
         if show_only_total:
             True#plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.,color='k',ls='-',label='total')
         else:
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=2.5,color='k',ls='-',label='centrals')
-            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=1.5,color='k',ls='-',label='satellites')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=lw_cent,color='k',ls='-',label='centrals')
+            plt.plot(10**bin_cen,np.zeros(len(hist_sats_sfg)),lw=lw_sat,color='k',ls='-',label='satellites')
 
     if show_only_total:
-        plt.plot(10**bin_cen,hist_cents_sfg+hist_sats_sfg,lw=2.,color='orange',ls=ls)
+        plt.plot(10**bin_cen,hist_cents_sfg+hist_sats_sfg,lw=2.,color='#CC6677',ls=ls)
         plt.plot(10**bin_cen,hist_cents_col+hist_sats_col,lw=2.,color='dodgerblue',ls=ls)
         #plt.plot(10**bin_cen,hist_cents_flux+hist_sats_flux,lw=2.,color='lawngreen',ls=ls)
     else:
-        plt.plot(10**bin_cen,hist_cents_sfg,lw=2.5,color='orange',ls=ls)
-        plt.plot(10**bin_cen,hist_sats_sfg,lw=1.5,color='orange',ls=ls)
-        plt.plot(10**bin_cen,hist_cents_col,lw=2.5,color='dodgerblue',ls=ls)
-        plt.plot(10**bin_cen,hist_sats_col,lw=1.5,color='dodgerblue',ls=ls)
-        #plt.plot(10**bin_cen,hist_cents_flux,lw=2.5,color='lawngreen',ls=ls)
-        #plt.plot(10**bin_cen,hist_sats_flux,lw=1.5,color='lawngreen',ls=ls)
+        plt.plot(10**bin_cen,hist_cents_sfg,lw=lw_cent,color='#CC6677',ls=ls)
+        plt.plot(10**bin_cen,hist_sats_sfg,lw=lw_sat,color='#CC6677',ls=ls)
+        plt.plot(10**bin_cen,hist_cents_col,lw=lw_cent,color='dodgerblue',ls=ls)
+        plt.plot(10**bin_cen,hist_sats_col,lw=lw_sat,color='dodgerblue',ls=ls)
+        #plt.plot(10**bin_cen,hist_cents_flux,lw=lw_cent,color='lawngreen',ls=ls)
+        #plt.plot(10**bin_cen,hist_sats_flux,lw=lw_sat,color='lawngreen',ls=ls)
 
 if want_fit:
     bincen_col, binsat_col, cents_col, sats_col = fit_hod(hist_cents_col,hist_sats_col,bin_cen)
     bincen_sfg, binsat_sfg, cents_sfg, sats_sfg = fit_hod(hist_cents_sfg,hist_sats_sfg,bin_cen)
 
     plt.plot(10**bincen_col,np.zeros(len(bincen_col)),lw=1.,color='k',ls='-.',label="polynomial fit")
-    plt.plot(10**bincen_col,cents_col,lw=1.5,color='dodgerblue',ls='-.')
+    plt.plot(10**bincen_col,cents_col,lw=lw_sat,color='dodgerblue',ls='-.')
     plt.plot(10**binsat_col,sats_col,lw=0.5,color='dodgerblue',ls='-.')
-    plt.plot(10**bincen_sfg,cents_sfg,lw=1.5,color='darkorange',ls='-.')
+    plt.plot(10**bincen_sfg,cents_sfg,lw=lw_sat,color='darkorange',ls='-.')
     plt.plot(10**binsat_sfg,sats_sfg,lw=0.5,color='darkorange',ls='-.')
     
-plt.legend(loc='upper left',ncol=2)#,fontsize=fs-2)
+plt.legend(loc='upper left',ncol=2,frameon=False)#,fontsize=fs-2)
 plt.ylim([0.001,10])
 plt.xlim([1.e11,1.e15])#2.e14])
-plt.ylabel(r"$\langle N_g \rangle$")#,fontsize=fs)
-plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$")#,fontsize=fs)
+plt.ylabel(r"$\langle N_g \rangle$",fontsize=fs)
+plt.xlabel(r"$M_{\rm halo} \ [M_\odot/h]$",fontsize=fs)
 plt.xscale('log')
 plt.yscale('log')
-plt.text(2.e11,0.2,r'${\rm '+(''.join(selection.split('_')))+",} \ z = %.1f$"%z_dic[snap_dir])#,fontsize=fs)
+plt.text(2.e11,0.3,r'${\rm '+(''.join(selection.split('_')))+",} \ z = %.1f$"%z_dic[snap_dir])#,fontsize=fs)
 if want_env:
-    plt.savefig("figs/HOD_elg_env"+snap_dir+selection+".png")
+    #plt.savefig("figs/HOD_elg_env"+snap_dir+selection+".png")
+    plt.savefig("paper/HOD_elg_env"+snap_dir+selection+".pdf")
 else:
-    plt.savefig("figs/HOD_elg"+snap_dir+selection+".png")
+    #plt.savefig("figs/HOD_elg"+snap_dir+selection+".png")
+    plt.savefig("paper/HOD_elg"+snap_dir+selection+".pdf")
 
+#plt.show()
 '''
 def fit_hod(ncen,nsat,bincentre):
     fitmin = 11.5; fitnorm = 12.; ncenmin = 0.05; nsatmin = np.min(nsat[nsat>0.])#0.006

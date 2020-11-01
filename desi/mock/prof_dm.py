@@ -31,21 +31,12 @@ box_name = "TNG300"
 Lbox = 205.
 root = "/mnt/gosling1/boryanah/"+box_name+"/"
 
-want_fp = int(sys.argv[2]) # do you wanna use dm or fp
-if want_fp:
-    dm_ext = '_fp'
-else:
-    dm_ext = '_dm'
+# particle directory
+halo_parts_dir = "/mnt/gosling1/boryanah/TNG300/ELG_halo_parts/"
+Omega_M = 0.3089
+Omega_B = 0.0486
+Omega_DM = Omega_M-Omega_B
 
-want_weights = 0
-
-
-want_rescaled = 1
-
-# load the elg sub ids
-sub_id_col = np.sort(np.load("data/sub_id"+env_type+snap_dir+selection+"_col.npy"))
-sub_id_sfg = np.sort(np.load("data/sub_id"+env_type+snap_dir+selection+"_sfg.npy"))
-sub_id_all = np.sort(np.load("data/sub_id"+env_type+snap_dir+selection+"_all.npy"))
 
 # loading the halo mass and group identification
 Group_M_Mean200_fp = np.load(root+'Group_M_Mean200_fp'+snap_dir+'.npy')*1.e10
@@ -60,71 +51,71 @@ SubhaloGrNr_dm = np.load(root+'SubhaloGrNr_dm'+snap_dir+'.npy').astype(int)
 SubhaloPos_dm = np.load(root+'SubhaloPos_dm'+snap_dir+'.npy')/1.e3
 GroupPos_dm = np.load(root+'GroupPos_dm'+snap_dir+'.npy')/1.e3
 
-# for subhalo vmax; for fp vel disp and massinhalfrad were actually really good!
-# first try: vm, vp, vm, vp
-proxies = ['SubhaloVmax','SubhaloVpeak','SubhaloMass','SubhaloVelDisp','SubhaloMassInMaxRad','SubhaloMassInRad']#'SubhaloMassInHalfRad'
-names = ['vmax','vpeak','mass','veldisp','massinmax','massinrad']
-dv = 0.1#0.4#0.45#0.2
-dm = 0.1#0.1,0.5#0.125 was used before
-deltas = [dv, dv, dm, dv, dm, dm]
-factors = [1.,1., 1.e10, 1., 1.e10, 1.e10]
-want_scatters = [1,1,0,1,0,0]
-# TESTING
-#want_scatters = [0,0,0,0,0,0]
-#want_scatters = [1,1,1,1,1,1]
-starts = np.array([5.,5.,1.e6,5.,1.e6,1.e6])
-log_starts = np.log10(starts)
-
-
-i_s = [0,1,2]#3]
-i = i_s[int(sys.argv[1])]
-i1 = 0+i*2
-i2 = 1+i*2
-
-proxy1 = proxies[i1]
-name_proxy1 = names[i1]
-proxy2 = proxies[i2]
-name_proxy2 = names[i2]
-delta1 = deltas[i1]
-delta2 = deltas[i2]
-factor1 = factors[i1]
-factor2 = factors[i2]
-start1 = starts[i1]
-start2 = starts[i2]
-log_start1 = log_starts[i1]
-log_start2 = log_starts[i2]
-want_scatter1 = want_scatters[i1]
-want_scatter2 = want_scatters[i2]
-
-
-SubhaloVmax_fp = np.load(root+proxy1+'_fp'+snap_dir+'.npy')*factor1
-#SubhaloVmax_fp = np.load(root+'SubhaloMass_fp'+snap_dir+'.npy')
-#SubhaloVmax_fp = np.load(root+'SubhaloMassInMaxRad_fp'+snap_dir+'.npy')
-#SubhaloVmax_fp = np.load(root+'SubhaloVelDisp_fp'+snap_dir+'.npy')
-
-SubhaloVpeak_fp = np.load(root+proxy2+'_fp'+snap_dir+'.npy')*factor2
-#SubhaloVpeak_fp = np.load(root+'SubhaloVelDisp_fp'+snap_dir+'.npy')
-#SubhaloVpeak_fp = np.load(root+'SubhaloMassInHalfRad_fp'+snap_dir+'.npy')
-#SubhaloVpeak_fp = np.load(root+'SubhaloMassInRad_fp'+snap_dir+'.npy')
-
-GroupFirstSub_fp = np.load(root+'GroupFirstSub_fp'+snap_dir+'.npy')
-GroupNsubs_fp = np.load(root+'GroupNsubs_fp'+snap_dir+'.npy')
-
-SubhaloVmax_dm = np.load(root+proxy1+'_dm'+snap_dir+'.npy')
-#SubhaloVmax_dm = np.load(root+'SubhaloMass_dm'+snap_dir+'.npy')
-#SubhaloVmax_dm = np.load(root+'SubhaloMassInMaxRad_dm'+snap_dir+'.npy')
-#SubhaloVmax_dm = np.load(root+'SubhaloVelDisp_dm'+snap_dir+'.npy')
-
-SubhaloVpeak_dm = np.load(root+proxy2+'_dm'+snap_dir+'.npy')
-#SubhaloVpeak_dm = np.load(root+'SubhaloVelDisp_dm'+snap_dir+'.npy')
-#SubhaloVpeak_dm = np.load(root+'SubhaloMassInHalfRad_dm'+snap_dir+'.npy')
-#SubhaloVpeak_dm = np.load(root+'SubhaloMassInRad_dm'+snap_dir+'.npy')
-
-GroupFirstSub_dm = np.load(root+'GroupFirstSub_dm'+snap_dir+'.npy')
-GroupNsubs_dm = np.load(root+'GroupNsubs_dm'+snap_dir+'.npy')
-
 N_halos_fp = GroupPos_fp.shape[0]
 N_halos_dm = GroupPos_dm.shape[0]
+
+bin_edges = np.logspace(np.log10(0.007),np.log10(5.),21)
+bin_cents = (bin_edges[1:]+bin_edges[:-1])*.5
+
+def get_hist_parts(inds,counts,dm_type='fp',delta='col'):
+
+    nparts = np.load(halo_parts_dir+"nstart_halo_"+delta+"_"+dm_type+".npy")
+    nstart = np.zeros(len(nparts),dtype=int)
+    nstart[1:] = np.cumsum(nparts)[:-1]
+    coords = np.load(halo_parts_dir+"coords_halo_"+delta+"_"+dm_type+".npy")/1000.
+
+    if dm_type == 'fp':
+        GroupPos = GroupPos_fp
+        Group_R_Mean200 = Group_R_Mean200_fp
+        f = Omega_M/Omega_DM
+        
+    elif dm_type == 'hod':
+        GroupPos = GroupPos_dm
+        Group_R_Mean200 = Group_R_Mean200_dm
+        f = 1.
+
+    hist = np.zeros(len(bin_cents))
+
+    for i in range(len(inds)):
+
+        if i % 100 == 0: print(i)
+        
+        pos_cen = GroupPos[inds[i]]
+        r2_mean = Group_R_Mean200[inds[i]]**2
+
+        #count = counts[inds[i]]
+        count = nparts[i]
+        pos_parts = coords[nstart[i]:nstart[i]+count]
+
+        pos_diff = pos_parts-pos_cen
+        d2 = np.sum(pos_diff**2,axis=1)
+
+        d2 /= r2_mean
+
+        hist_this, bins = np.histogram(np.sqrt(d2),bins=bin_edges)
+        hist += hist_this
+
+    hist /= len(inds)
+    hist *= f
+    return hist
+
+delta = 'col'
+
+count_col_fp = np.load("data_counts/count_halo_"+delta+"_fp.npy")
+count_col_hod = np.load("data_counts/count_halo_"+delta+"_hod.npy")
+
+print(len(count_col_fp),len(count_col_hod))
+
+inds_fp = np.where(count_col_fp > 0)[0]
+inds_hod = np.where(count_col_hod > 0)[0]
+
+hist_fp = get_hist_parts(inds_fp,count_col_fp,dm_type='fp')
+#hist_hod = get_hist_parts(inds_hod,count_col_hod,dm_type='hod')
+
+np.save("data_prof/hist_col_fp_dm.npy",hist_fp)
+#np.save("data_prof/hist_col_hod_dm.npy",hist_hod)
+
+quit()
 
 fp_dmo_halo_inds = np.load(root+'fp_dmo_halo_inds'+snap_dir+'.npy')
 fp_halo_inds = fp_dmo_halo_inds[0]

@@ -175,8 +175,14 @@ def get_jack_corr(xyz_true,w_true,xyz_hod,w_hod,Lbox):
     # where are the galaxies located in real space
     
     # bins for the correlation function
-    N_bin = 16
-    bins = np.logspace(-1.,1.,N_bin)
+    #N_bin = 16
+    #bins = np.logspace(-1.,1.,N_bin)
+    # TESTING for big corr env
+    #N_bin = 21
+    #bins = np.logspace(-1.,1.5,N_bin)
+    # TESTING for profile
+    N_bin = 12
+    bins = np.logspace(np.log10(0.12),1.,N_bin)
     bin_centers = (bins[:-1] + bins[1:])/2.
 
     # dimensions for jackknifing

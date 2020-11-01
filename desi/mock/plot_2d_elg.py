@@ -51,7 +51,6 @@ GroupNsubs_dm = np.load(root+'GroupNsubs_dm'+snap_dir+'.npy')
 N_halos_dm = GroupPos_dm.shape[0]
 inds_halo_dm = np.arange(N_halos_dm,dtype=int)
 
-
 # one option is to compute the density field from the positions of the group centers
 #d_smooth = smooth_density(get_density(GroupPos_fp))
 # another is to use the particle positions
@@ -86,7 +85,7 @@ def get_d_smooth(pos_parts,want_cosmic_web=1):
 
     return d_smooth, depth, N_dim, fac
 
-want_cosmic_web = 0
+want_cosmic_web = 1 # TESTING
 if want_cosmic_web:
     d_smooth, cosmic_web, depth, N_dim, fac = get_d_smooth(pos_parts,want_cosmic_web=want_cosmic_web)
 else:
@@ -99,6 +98,27 @@ xyz_col = SubhaloPos_fp[sub_id_col]/gr_size
 xyz_sfg = SubhaloPos_fp[sub_id_sfg]/gr_size
 xyz_all = SubhaloPos_fp[sub_id_all]/gr_size
 rmax_col = SubhaloVmaxRad_fp[sub_id_col]/gr_size
+
+ind_col = xyz_col.astype(int)
+ind_all = xyz_all.astype(int)
+
+def get_percentage(inds):
+    i_cw = inds[:,0]
+    j_cw = inds[:,1]
+    k_cw = inds[:,2]
+    env_cw = cosmic_web[i_cw,j_cw,k_cw]
+    env, ind, count = np.unique(env_cw,return_index=1,return_counts=1)
+    total = len(env_cw)
+    for i in range(len(env)):
+        print(env[i])
+        print(count[i]*100./total)
+    return
+
+print("for the color-selected:")
+get_percentage(ind_col)
+print("for the mass-selected:")
+get_percentage(ind_all)
+
 
 chosen_slice = 30*fac
 
@@ -122,7 +142,8 @@ plt.ylabel(r"$Y [\rm{Mpc}/h]$")
 plt.gca().axes.yaxis.set_ticklabels([])
 plt.gca().axes.xaxis.set_ticklabels([])
 if not want_cosmic_web:
-    plt.savefig("figs/density_2d.png")
+    #plt.savefig("figs/density_2d.png")
+    plt.savefig("../paper/density_2d.pdf")
 
 if want_cosmic_web:
     plt.figure(2,figsize=(8,7))
@@ -138,5 +159,6 @@ if want_cosmic_web:
     plt.ylabel(r"$Y [\rm{Mpc}/h]$")
     plt.gca().axes.yaxis.set_ticklabels([])
     plt.gca().axes.xaxis.set_ticklabels([])
-    plt.savefig("figs/cosmic_web_2d.png")
+    #plt.savefig("figs/cosmic_web_2d.png")
+    plt.savefig("../paper/cosmic_web_2d.pdf")
 plt.show()

@@ -6,7 +6,7 @@ plotparams.buba()
 
 opts = np.array(['col','sfg','all'])[::-1]
 lab_opts = np.array(['color-selected','SFR-selected','mass-selected'])[::-1]
-col_opts = np.array(['dodgerblue','orange','black'])[::-1]
+col_opts = np.array(['dodgerblue','#CC6677','black'])[::-1]
 types = ['bias','corr. coeff.']
 
 bin_centers = np.load("data_parts/bin_cents.npy")
@@ -71,17 +71,17 @@ for i in range(nprops):
         plt.xscale('log')
 
         if i_type == 0:
-            plt.ylabel(r'$(\xi_{\rm gg}/\xi_{\rm mm})^{1/2}$')
+            plt.ylabel(r'$\tilde b(r) = (\xi_{\rm gg}/\xi_{\rm mm})^{1/2}$')
         else:
-            plt.ylabel(r'$\xi_{\rm gm}/(\xi_{\rm gg} \xi_{\rm mm})^{1/2}$')
+            plt.ylabel(r'$\tilde r(r) = \xi_{\rm gm}/(\xi_{\rm gg} \xi_{\rm mm})^{1/2}$')
             plt.xlabel(r'$r$ [Mpc/h]')
             
         if plot_no >= ntot-ncols+1:
             plt.xlabel(r'$r$ [Mpc/h]')
         if plot_no%ncols == 1 and i_type == 0:
-            plt.ylabel(r'$(\xi_{\rm gg}/\xi_{\rm mm})^{1/2}$')
+            plt.ylabel(r'$\tilde b(r) = (\xi_{\rm gg}/\xi_{\rm mm})^{1/2}$')
         elif plot_no%ncols == 1 and i_type == 1:
-            plt.ylabel(r'$\xi_{\rm gm}/(\xi_{\rm gg} \xi_{\rm mm})^{1/2}$')
+            plt.ylabel(r'$\tilde r(r) = \xi_{\rm gm}/(\xi_{\rm gg} \xi_{\rm mm})^{1/2}$')
         else:
             1#plt.gca().axes.yaxis.set_ticklabels([])
 

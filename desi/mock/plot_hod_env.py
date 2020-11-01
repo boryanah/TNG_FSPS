@@ -69,7 +69,9 @@ def plot_hod(hist_all,hist_cents_all,hist_sats_all,name):
      plt.show()
 
 lss = ['-',':','--']
-cs = ['dodgerblue','black','orange']
-plot_hod(hist_all_all,hist_cents_all_all,hist_sats_all_all,name='figs/hod_env_all.png')
-plot_hod(hist_col_all,hist_cents_col_all,hist_sats_col_all,name='figs/hod_env_col.png')
-plot_hod(hist_sfg_all,hist_cents_sfg_all,hist_sats_sfg_all,name='figs/hod_env_sfg.png')
+cs = ['dodgerblue','black','#CC6677']
+#plot_hod(hist_all_all,hist_cents_all_all,hist_sats_all_all,name='figs/hod_env_all.png')
+plot_hod(hist_all_all,hist_cents_all_all,hist_sats_all_all,name='../paper/HOD_env_all.pdf')
+#plot_hod(hist_col_all,hist_cents_col_all,hist_sats_col_all,name='figs/hod_env_col.png')
+plot_hod(hist_col_all,hist_cents_col_all,hist_sats_col_all,name='../paper/HOD_env_col.pdf')
+#plot_hod(hist_sfg_all,hist_cents_sfg_all,hist_sats_sfg_all,name='figs/hod_env_sfg.png')

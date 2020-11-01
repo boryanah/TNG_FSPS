@@ -5,7 +5,8 @@ from astropy.io import fits
 from util import get_scatter, make_scatter_histogram, nMgy_to_mag
 import sys
 import plotparams
-plotparams.buba()
+#plotparams.buba()
+plotparams.default()
 
 # fsps parameters
 tng = 'tng300'#'tng300'
@@ -41,7 +42,7 @@ def combine_col_fits(color):
 
 
 if snap == '041': z_min = 1.3; z_max = 1.5; 
-if snap == '047': z_min = 1.07; z_max = 1.14;
+if snap == '047': z_min = 1.04; z_max = 1.12;
 if snap == '055': z_min = .79; z_max = .86;#z_min = .8; z_max = .85;
 
 z_sel2 = (z_min < dat2['RED_Z']) & (dat2['RED_Z'] < z_max)
@@ -121,7 +122,7 @@ if want_hist:
     r_cents, hist_r, hist_r_fsps = get_col_hist(r_dec,r_dec_fsps)
     z_cents, hist_z, hist_z_fsps = get_col_hist(z_dec,z_dec_fsps)
 
-    plt.subplots(1,3,figsize=(5.4*3,1*5.))
+    plt.subplots(1,3,figsize=(5.4*3,4.9))
 
     plt.subplot(1,3,1)
     plt.plot(g_cents,hist_g,label='DEEP2-DR8')
@@ -153,5 +154,6 @@ y_dec_fsps = y_dec_fsps[color_selection_fsps]
 
 # testing the rotation
 theta = None
-figname = "figs/deep2_dr"+dr_v+snap_dir+".png"
+figname = "paper/deep2_dr"+dr_v+snap_dir+".png"
+#figname = "paper/deep2_dr"+dr_v+snap_dir+".pdf"
 make_scatter_histogram(x_dec_fsps,y_dec_fsps,x_dec,y_dec,figname=figname,redshift=z_dic[snap_dir],theta=theta)

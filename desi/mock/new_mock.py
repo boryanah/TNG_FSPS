@@ -1,10 +1,13 @@
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import h5py
 import Corrfunc
 from util import get_density, get_smooth_density, smooth_density, get_jack_corr, get_counts, get_hist
 import plotparams
-plotparams.buba()
+#plotparams.buba()
+plotparams.default()
 
 np.random.seed(7) # i liked 7# 10 not horrible
 
@@ -40,6 +43,9 @@ box_name = "TNG300"
 Lbox = 205.
 root = "/mnt/gosling1/boryanah/"+box_name+"/"
 
+# directory of particle coordinates for halos belonging to random seed 7
+halo_parts_dir = "/mnt/gosling1/boryanah/TNG300/ELG_halo_parts/"
+
 # load the elg sub ids
 sub_id_col = np.load("data/sub_id"+env_type+snap_dir+selection+"_col.npy")
 sub_id_sfg = np.load("data/sub_id"+env_type+snap_dir+selection+"_sfg.npy")
@@ -64,9 +70,9 @@ SubhaloVmax_dm = np.load(root+'SubhaloVmax_dm'+snap_dir+'.npy'); start = 5.#good
 #SubhaloVmax_dm = np.load(root+'SubhaloVelDisp_dm'+snap_dir+'.npy'); start = 20.
 SubhaloVpeak_dm = np.load(root+'SubhaloVpeak_dm'+snap_dir+'.npy')
 #SubhaloVpeak_dm = np.load(root+'SubhaloVelDisp_dm'+snap_dir+'.npy'); start = 5.
-delta_col = 0.4
-delta_sfg = 0.4
-delta_all = 0.02
+delta_col = 0.1# works well w/ 0.4
+delta_sfg = 0.1# works well w/ 0.4
+delta_all = 0.02# works well w/ 0.02
 want_scatter_col = 1
 want_scatter_sfg = 1
 want_scatter_all = 0
@@ -86,7 +92,7 @@ fp_halo_inds = fp_dmo_halo_inds[0]
 dmo_halo_inds = fp_dmo_halo_inds[1]
 
 # START HERE
-'''
+
 
 show_match = 0
 if show_match:
@@ -403,35 +409,17 @@ def get_pos_hod(count_halo_elg_hod,count_halo_cents_elg_hod,pos_type=v_type,want
             all_grnr = np.arange(first_sub,first_sub+n_sub)
             vmaxes = SubhaloV_dm[all_grnr]
             poses = SubhaloPos_dm[all_grnr]
-            sats = np.sum((poses-pos_c)**2,axis=1) >= 1.e-6
-            
-            if want_scat:
-                vmaxes[vmaxes < start] = start
+            sats = np.sum((poses-pos_c)**2,axis=1) >= 1.e-8
 
             vmaxes = vmaxes[sats]
             poses = poses[sats]
             inds_vm = np.argsort(vmaxes)
             
-            #chunk_size = len(inds_vm)//N_div_vm
+
             if want_scat:
-                '''
-                for i in range(N_div_vm):
-                    tmp = inds_vm[chunk_size*i:chunk_size*(i+1)]
-                    np.random.shuffle(tmp)
-                    inds_vm[chunk_size*i:chunk_size*(i+1)] = tmp
-                '''
-                vm = np.log10(vmaxes[inds_vm])-log_start
-                vm_int = (vm/delta).astype(int)
-                unique, indices, counts = np.unique(vm_int,return_index=True,return_counts=True)
+                vmaxes = 10.**np.random.normal(np.log10(vmaxes),delta) 
+                inds_vm = np.argsort(vmaxes)
                                 
-                for i in range(len(indices)):
-                    ind = indices[i]
-                    count = counts[i]
-                    
-                    tmp = inds_vm[ind:ind+count]
-                    np.random.shuffle(tmp)
-                    inds_vm[ind:ind+count] = tmp
-                
             inds_vm = inds_vm[::-1]
             inds_vm = inds_vm[:gal_num-flag_c]
             
@@ -446,6 +434,30 @@ def get_pos_hod(count_halo_elg_hod,count_halo_cents_elg_hod,pos_type=v_type,want
         xyz_hod = GroupPos_dm[count_halo_elg_hod > 0]
         w_hod = count_halo_elg_hod[count_halo_elg_hod > 0].astype(xyz_hod.dtype)
 
+    elif pos_type == 'particles':
+        nparts = np.load(halo_parts_dir+"nstart_halo_"+delta+"_hod.npy")
+        nstart = np.zeros(len(nparts),dtype=int)
+        nstart[1:] = np.cumsum(nparts)[:-1]
+        coords = np.load(halo_parts_dir+"coords_halo_"+delta+"_hod.npy")/1000.
+        #delta is col, sfg, all
+        
+        count_halo_sats_elg_hod = count_halo_elg_hod-count_halo_cents_elg_hod
+        inds_hod = np.where(count_halo_elg_hod > 0)[0]
+
+        for i in range(len(inds_hod)):
+            nsats = count_halo_sats_elg_hod[inds_hod[i]]
+            if nsats == 0: continue
+            # because shuffled already
+            xyz = (coords[nstart[i]:nstart[i]+nparts[i]])[:nsats]
+            try:
+                xyz_sats = np.vstack((xyz_sats,xyz))
+            except:
+                xyz_sats = xyz
+        del coords
+        xyz_cents = GroupPos_dm[count_halo_cents_elg_hod > 0]
+        xyz_hod = np.vstack((xyz_sats,xyz_cents))
+        w_hod = np.ones(xyz_hod.shape[0],dtype=xyz_hod.dtype)
+        
     return xyz_hod, w_hod
 
 
@@ -481,14 +493,27 @@ else:
     count_halo_sfg_hod = get_hod_counts(hist_sfg,hist_cents_sfg,hist_sats_sfg,N_halos_dm,Group_M_Mean200_dm)    
     count_halo_all_hod = get_hod_counts(hist_all,hist_cents_all,hist_sats_all,N_halos_dm,Group_M_Mean200_dm)
 
+'''
+np.save("data_counts/count_halo_col_hod.npy",count_halo_col_hod)
+np.save("data_counts/count_halo_col_fp.npy",count_halo_col_fp)
+np.save("data_counts/count_halo_sfg_hod.npy",count_halo_sfg_hod)
+np.save("data_counts/count_halo_sfg_fp.npy",count_halo_sfg_fp)
+np.save("data_counts/count_halo_all_hod.npy",count_halo_all_hod)
+np.save("data_counts/count_halo_all_fp.npy",count_halo_all_fp)
+'''
+
+
 # get weights and positions
-# TESTING
-#xyz_col_hod, w_col_hod = get_pos_hod(count_halo_col_dm,count_halo_cents_col_dm,pos_type=v_type)
-# og
+'''
+# method using subhalos ordered by property
 xyz_col_hod, w_col_hod = get_pos_hod(count_halo_col_hod,count_halo_cents_col_hod,pos_type=v_type_col,delta=delta_col,want_scat=want_scatter_col)
 xyz_sfg_hod, w_sfg_hod = get_pos_hod(count_halo_sfg_hod,count_halo_cents_sfg_hod,pos_type=v_type_sfg,delta=delta_sfg,want_scat=want_scatter_sfg)
 xyz_all_hod, w_all_hod = get_pos_hod(count_halo_all_hod,count_halo_cents_all_hod,pos_type=v_type_all,delta=delta_all,want_scat=want_scatter_all)
-
+'''
+# new method with particles
+xyz_col_hod, w_col_hod = get_pos_hod(count_halo_col_hod,count_halo_cents_col_hod,pos_type='particles',delta='col')
+xyz_sfg_hod, w_sfg_hod = get_pos_hod(count_halo_sfg_hod,count_halo_cents_sfg_hod,pos_type='particles',delta='sfg')
+xyz_all_hod, w_all_hod = get_pos_hod(count_halo_all_hod,count_halo_cents_all_hod,pos_type='particles',delta='all')
 
 # TESTING
 def shuffle_and_prune(xyz,w,lim):
@@ -513,7 +538,6 @@ if xyz_all_hod.shape[0] > xyz_all_true.shape[0]:
     xyz_all_hod, w_all_hod = shuffle_and_prune(xyz_all_hod,w_all_hod,xyz_all_true.shape[0])
 else:
     xyz_all_true, w_all_true = shuffle_and_prune(xyz_all_true,w_all_true,xyz_all_hod.shape[0])
-    
 
 
 # check that the hod's make sense
@@ -556,7 +580,7 @@ np.save("data/bin_centers.npy",bin_centers)
 
 
 # END HERE
-'''
+
 
 N_bin = 12
 bins = np.logspace(np.log10(0.12),1.,N_bin)
@@ -571,7 +595,7 @@ Rat_all_hodtrue_err = np.load("data/Rat_all_hodtrue_err.npy")
 
 
 
-plt.figure(1,figsize=(10,9))
+plt.figure(1,figsize=(9,7))
 
 # for seeing where we are
 line = np.linspace(0,20,3)
