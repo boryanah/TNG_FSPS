@@ -6,7 +6,7 @@ from util import get_scatter, make_scatter_histogram, nMgy_to_mag
 import sys
 import plotparams
 #plotparams.buba()
-plotparams.default()
+#plotparams.default()
 
 # fsps parameters
 tng = 'tng300'#'tng300'
@@ -48,6 +48,9 @@ if snap == '055': z_min = .79; z_max = .86;#z_min = .8; z_max = .85;
 z_sel2 = (z_min < dat2['RED_Z']) & (dat2['RED_Z'] < z_max)
 z_sel3 = (z_min < dat3['RED_Z']) & (dat3['RED_Z'] < z_max)
 z_sel4 = (z_min < dat4['RED_Z']) & (dat4['RED_Z'] < z_max)
+
+print("median redshift = ",np.median(dat2['RED_Z'][z_sel2]))
+
 
 g_dec = nMgy_to_mag(combine_col_fits('g'))
 r_dec = nMgy_to_mag(combine_col_fits('r'))

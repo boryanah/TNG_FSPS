@@ -1,12 +1,10 @@
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import h5py
 import Corrfunc
 from random import choices
 from util import get_density, smooth_density, get_jack_corr, get_counts, get_hist
-import plotparams
+import plotparams_old as plotparams
 #plotparams.buba()
 plotparams.default()
 import sys
@@ -29,6 +27,7 @@ env_type = ''
 box_name = "TNG300"
 Lbox = 205.
 root = "/mnt/gosling1/boryanah/"+box_name+"/"
+fontsize = 26
 
 bin_edges = np.logspace(np.log10(0.007),np.log10(5.),21)
 vol_edges = 4./3*np.pi*bin_edges**3
@@ -111,15 +110,16 @@ for j in range(len(dm_exts)):
         if i == 0 and j == 0:
             plt.plot(bin_cents,hist_col_fp/vol_bins,c='black',lw=lw,ls='--',label='DM profile')
         elif i == 0 and j == 1:
-            plt.plot(bin_cents,hist_col_hod/vol_bins,c='black',lw=lw,ls='--')
-        if j == 0:
-            plt.plot(bin_cents,hist_vmax/vol_bins,c=color1,lw=lw,ls=ls,zorder=1,label=lab_proxy1)
-            plt.plot(bin_cents,hist_vpeak/vol_bins,c=color2,lw=lw,ls=ls,zorder=2,label=lab_proxy2)
-        else:
-            plt.plot(bin_cents,hist_vmax/vol_bins,c=color1,lw=lw,ls=ls,zorder=1)
-            plt.plot(bin_cents,hist_vpeak/vol_bins,c=color2,lw=lw,ls=ls,zorder=2)
-        if i == 0: plt.scatter(bin_cents,hist/vol_bins,c='dodgerblue',s=120,zorder=3,marker='*')#,label='DESI ELGs')
+            plt.plot(bin_cents,hist_col_hod/vol_bins,c='black',lw=lw,ls='--',label='DM profile')
+        
+        plt.plot(bin_cents,hist_vmax/vol_bins,c=color1,lw=lw,ls=ls,zorder=1,label=lab_proxy1)
+        plt.plot(bin_cents,hist_vpeak/vol_bins,c=color2,lw=lw,ls=ls,zorder=2,label=lab_proxy2)
+        
+        if i == 0: plt.scatter(bin_cents,hist/vol_bins,c='dodgerblue',s=120,zorder=3,marker='*',label='DESI ELGs')
 
+        if j == 0: plt.text(0.12,1.4,r'${\rm full}$-${\rm physics}$')
+        if j == 1: plt.text(0.12,1.4,r'${\rm dark}$-${\rm matter}$-${\rm only}$')
+        
         plt.figure(2*j+2,figsize=fs)
         
         line = np.linspace(0,20,3)
@@ -127,46 +127,35 @@ for j in range(len(dm_exts)):
 
         Rat_hodtrue_mean, Rat_hodtrue_err, Corr_mean_hod, Corr_err_hod,  Corr_mean_true, Corr_err_true, bin_centers = get_jack_corr(pos_col,w_col,pos_vmax,w_vmax,Lbox)
         
-        if j == 0:
-            #plt.errorbar(bin_centers*(1.+i*0.05),Rat_hodtrue_mean,yerr=Rat_hodtrue_err,color=color1,ls=ls,label=lab_proxy1,alpha=1.,fmt='o',capsize=4)
-            plt.plot(bin_centers,Rat_hodtrue_mean,color=color1,ls=ls,label=lab_proxy1)
-            plt.fill_between(bin_centers,Rat_hodtrue_mean-Rat_hodtrue_err,Rat_hodtrue_mean+Rat_hodtrue_err,facecolor=color1,alpha=.1)
-        else:
-            #plt.errorbar(bin_centers*(1.+i*0.05),Rat_hodtrue_mean,yerr=Rat_hodtrue_err,color=color1,ls=ls,alpha=1.,fmt='o',capsize=4)
-            plt.plot(bin_centers,Rat_hodtrue_mean,color=color1,ls=ls)
-            plt.fill_between(bin_centers,Rat_hodtrue_mean-Rat_hodtrue_err,Rat_hodtrue_mean+Rat_hodtrue_err,facecolor=color1,alpha=.1)
+        plt.plot(bin_centers,Rat_hodtrue_mean,color=color1,ls=ls,label=lab_proxy1)
             
         Rat_hodtrue_mean, Rat_hodtrue_err, Corr_mean_hod, Corr_err_hod,  Corr_mean_true, Corr_err_true, bin_centers = get_jack_corr(pos_col,w_col,pos_vpeak,w_vpeak,Lbox)
         
-        if j == 0:
-            #plt.errorbar(bin_centers*(1.-(1+i)*0.05),Rat_hodtrue_mean,yerr=Rat_hodtrue_err,color=color2,ls=ls,label=lab_proxy2,alpha=1.,fmt='o',capsize=4)
-            plt.plot(bin_centers,Rat_hodtrue_mean,color=color2,ls=ls,label=lab_proxy2)
-            plt.fill_between(bin_centers,Rat_hodtrue_mean-Rat_hodtrue_err,Rat_hodtrue_mean+Rat_hodtrue_err,facecolor=color2,alpha=.1)
-        else:
-            #plt.errorbar(bin_centers*(1.-(1+i)*0.05),Rat_hodtrue_mean,yerr=Rat_hodtrue_err,color=color2,ls=ls,alpha=1.,fmt='o',capsize=4)
-            plt.plot(bin_centers,Rat_hodtrue_mean,color=color2,ls=ls)
-            plt.fill_between(bin_centers,Rat_hodtrue_mean-Rat_hodtrue_err,Rat_hodtrue_mean+Rat_hodtrue_err,facecolor=color2,alpha=.1)
+        plt.plot(bin_centers,Rat_hodtrue_mean,color=color2,ls=ls,label=lab_proxy2)
+        plt.fill_between(bin_centers,Rat_hodtrue_mean-Rat_hodtrue_err,Rat_hodtrue_mean+Rat_hodtrue_err,facecolor=color2,alpha=.1)
+        
 
-        if j == 0: plt.text(0.12,1.4,r'${\rm FP}$')
-        if j == 1: plt.text(0.12,1.4,r'${\rm DMO}$')
+        if j == 0: plt.text(0.18,.6,r'${\rm full}$-${\rm physics}$')
+        if j == 1: plt.text(0.18,.6,r'${\rm dark}$-${\rm matter}$-${\rm only}$')
         
     plt.figure(2*j+1)#,figsize=(8,6))
     plt.xscale('log')
     plt.yscale('log')
-    if j == 0: plt.legend()
+    plt.legend(loc='upper right',fontsize=18)#,frameon=False)
     if want_rescaled:
-        plt.xlabel(r'$r/R_{\rm 200 m}$')
+        plt.xlabel(r'$r/R_{\rm 200 m}$',fontsize=fontsize)
     else:
-        plt.xlabel(r'$r \ [{\rm Mpc}/h]$')
-    plt.ylabel(r'$n(r)$')
+        plt.xlabel(r'$r \ [{\rm Mpc}/h]$',fontsize=fontsize)
+    plt.ylabel(r'$n(r)$',fontsize=fontsize)
     plt.xlim([0.007,5])
+    plt.ylim([1.e-2,2.e7])
     plt.savefig("../paper/gal_distn"+dm_ext+".pdf")
 
     plt.figure(2*j+2)#,figsize=(8,6))
-    plt.xlabel(r'$r \ [{\rm Mpc}/h]$')
-    plt.ylabel(r'$\xi(r)_{\rm model}/\xi(r)_{\rm DESI \ ELG}$')
+    plt.xlabel(r'$r \ [{\rm Mpc}/h]$',fontsize=fontsize)
+    plt.ylabel(r'$\xi(r)_{\rm model}/\xi(r)_{\rm DESI \ ELGs}$',fontsize=fontsize)
     plt.xscale('log')
-    if j == 0: plt.legend()
+    plt.legend()
     plt.ylim([0.4,1.6])
     plt.xlim([0.095,12])
     plt.savefig("../paper/prof_ELG"+dm_ext+".pdf")

@@ -184,9 +184,9 @@ def estimate_ngal(redshift,box_size):
     1.75 2.88 4.64 6.30 0.05 0.12 6.30 0 0 87 8.91 6.81
     1.85 2.92 4.71 6.39 0.05 0.12 6.43 0 0 86 9.25 7.07
     '''
-estimate_ngal(0.75,205.)
-estimate_ngal(0.85,205.)
-estimate_ngal(1.05,205.)
-estimate_ngal(1.15,205.)
-estimate_ngal(1.35,205.)
-estimate_ngal(1.45,205.)
+#estimate_ngal(0.75,205.)
+#estimate_ngal(0.85,205.)
+#estimate_ngal(1.05,205.)
+#estimate_ngal(1.15,205.)
+#estimate_ngal(1.35,205.)
+#estimate_ngal(1.45,205.)
