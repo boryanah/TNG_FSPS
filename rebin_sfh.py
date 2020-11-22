@@ -51,30 +51,36 @@ def get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, 
 def main():
     # choices
     sfh_ap = '_30kpc'
-    ind = 30000
+    ind = 3000
 
     # load hdf5
-    tng = 'tng300'
-    snap = '059'#'059'#'099'
+    #tng = 'tng300'
+    tng = 'tng100'
+    #snap = '059'
+    snap = '099'
     file_name = 'data/galaxies_SFH_'+tng+'_'+snap+'.hdf5'
     f = h5py.File(file_name, 'r')
 
     # load the bin center in Gyr
     tbins = f['info/sfh_tbins'][:]
     tedge = f['info/sfh_t_edges'][:]
-    tobs = 7.309546074921499#tedge[-1]
-
+    tobs = tedge[-1]
+    #tobs = 7.309546074921499
+    print("tobs = ",tobs)
+    
     # load the in and ex situ sfr and sfz stellar history
     sfh_insitu_sfr = f['sfh_insitu'+sfh_ap+'_sfr'][ind,:]
     sfh_exsitu_sfr = f['sfh_exsitu'+sfh_ap+'_sfr'][ind,:]
     sfh_insitu_sfz = f['sfh_insitu'+sfh_ap+'_sfz'][ind,:]
     sfh_exsitu_sfz = f['sfh_exsitu'+sfh_ap+'_sfz'][ind,:]
+    
+    SubMstar = f['catsh_SubhaloMassType'][ind,4]
     f.close()
 
     tbins_new, sfr_new, sfz_new = get_SFH_binned(tobs, tbins, sfh_insitu_sfr, sfh_exsitu_sfr, sfh_insitu_sfz, sfh_exsitu_sfz)
     
     # for the plots
-    want_log = 0
+    want_log = False
     n_cols = 2
     n_rows = 2
     plt.subplots(nrows=n_rows, ncols=n_cols, figsize=(7.5*n_cols, n_rows*5))
@@ -89,9 +95,9 @@ def main():
         sfz[sfz == np.min(sfz)] = -9.
         sfr = np.log10(sfr);
         sfr[sfr == np.min(sfr)] = -4
-        print("integrated sfr = ",format((np.trapz(10.**sfr, time*1.e9)).sum(),'.2e'))
+        print("integrated sfr, Mstar = ",format((np.trapz(10.**sfr, time*1.e9)).sum(),'.2e'),format(SubMstar,'.2e'))
     else:
-        print("integrated sfr = ",format((np.trapz(sfr, time*1.e9)).sum(),'.2e'))
+        print("integrated sfr, Mstar = ",format((np.trapz(sfr, time*1.e9)).sum(),'.2e'),format(SubMstar,'.2e'))
 
     # plotting
     i_plot = 0
@@ -109,7 +115,7 @@ def main():
 
     sfr = sfr_new
     sfz = sfz_new
-    print(sfr[-1])
+    print("sfr[-1] = ",sfr[-1])
     time = tbins_new
     if want_log:
         sfz = np.log10(sfz);
@@ -139,3 +145,5 @@ def main():
     # set axes
     plt.savefig("sfh.png")
     plt.show()
+
+main()
