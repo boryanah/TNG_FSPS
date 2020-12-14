@@ -130,7 +130,10 @@ elif selection == '_DESI':
     q_selection = brfa_sel
     
     # combining all selections
-    col_selection = brfa_sel & blre_sel & star_sel & oii_sel
+    col_selection = brfa_sel & blre_sel & star_sel & oii_sel; test = 0 # og
+    #col_selection = blre_sel & star_sel & oii_sel; test = 1 # TESTING
+    #col_selection = brfa_sel; test = 2 # TESTING
+    #col_selection = np.ones(len(brfa_sel),dtype=bool); test = 3 # TESTING
     col_selection &= survey_selection
 
 print("# color-selected galaxies = ",np.sum(col_selection))
@@ -152,9 +155,8 @@ SubhaloGrNr_fp = np.load(root+'SubhaloGrNr_fp'+snap_dir+'.npy')
 SubhaloPos_fp = np.load(root+'SubhaloPos_fp'+snap_dir+'.npy')/1.e3
 
 # load the info about the star formation rate
-fdir = '/mnt/store1/boryanah/IllustrisTNG/CosmicWeb'
-filename = 'WEB_CIC_256_DM_TNG300-2.hdf5'
-f = h5py.File(fdir+filename, 'r')
+fname = '../data/galaxies_SFH_tng'+box_name[-3:]+'_'+snap+".hdf5"
+f = h5py.File(fname, 'r')
 sub_SFR = f['catsh_SubhaloSFR'][:]
 sub_star_mass = f['catsh_SubhaloMassType'][:,4]
 sub_ids = f['catsh_id'][:]
@@ -470,6 +472,7 @@ if want_hod:
 
     bin_cen = .5*(bin_edges[1:]+bin_edges[:-1])
     np.save("data/bin_cen.npy",bin_cen)
+
     np.save("data/hist_cents"+env_type+snap_dir+selection+"_col.npy",hist_cents_col)
     np.save("data/hist_sats"+env_type+snap_dir+selection+"_col.npy",hist_sats_col)
     np.save("data/hist_cents"+env_type+snap_dir+selection+"_sfg.npy",hist_cents_sfg)
@@ -480,3 +483,12 @@ if want_hod:
     np.save("data/hist_unnorm"+env_type+snap_dir+selection+"_col.npy",hist_unnorm_col)
     np.save("data/hist_unnorm"+env_type+snap_dir+selection+"_sfg.npy",hist_unnorm_sfg)
     np.save("data/hist_unnorm"+env_type+snap_dir+selection+"_flux.npy",hist_unnorm_flux)
+    '''
+    # For the tests
+    np.save("data/test_%d_hist_cents"%test+env_type+snap_dir+selection+"_col.npy",hist_cents_col)
+    np.save("data/test_%d_hist_sats"%test+env_type+snap_dir+selection+"_col.npy",hist_sats_col)
+    np.save("data/test_%d_hist_cents"%test+env_type+snap_dir+selection+"_sfg.npy",hist_cents_sfg)
+    np.save("data/test_%d_hist_sats"%test+env_type+snap_dir+selection+"_sfg.npy",hist_sats_sfg)
+    np.save("data/test_%d_hist_cents"%test+env_type+snap_dir+selection+"_flux.npy",hist_cents_flux)
+    np.save("data/test_%d_hist_sats"%test+env_type+snap_dir+selection+"_flux.npy",hist_sats_flux)
+    '''
